@@ -1,0 +1,42 @@
+A simple unit frame addon based off of the oUF core framework. The design and purpose of these unit
+frames is to allow as much configuration as possible via an attached configuration lua to alter
+certain settings of the unit frames, while remaining as light on memory usage as possible.
+
+It also has a toggle-able 'healer mode' that alters the location of the raid and party frames
+dependent on whether the "Healer" option has been toggled to true in the config for party or raid.
+
+-----------
+Please Note
+-----------
+
+Some knowledge of Lua is required for customization of these frames beyond the configuration file.
+To alter options in the configuration file, simple open it in your favorite text editor and change
+options from false to true, or vice versa. Also of note, for the displaying of health, more than
+one health option cannot be functional at a time so please choose only one.
+
+---------------
+Supported Units
+---------------
+
+    * Player
+    * Target
+    * Pet
+    * Target of Target
+    * Focus
+    * Party
+    * Raid 
+
+-----------------
+Supported Modules
+-----------------
+
+    * DebuffHighlight
+    * DruidPower
+    * Smooth
+    * RuneBar 
+
+----------------------
+Currently Known Issues
+----------------------
+
+    * None currently known. 
