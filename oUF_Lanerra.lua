@@ -278,7 +278,6 @@ end
 local UpdatePower = function(Power, unit, min, max)
 	local self = Power:GetParent()
 	
-	local UnitHappiness = self.colors.happiness[GetPetHappiness()]
 	local _, PowerType, altR, altG, altB = UnitPowerType(unit)
 	local UnitPower = PowerBarColor[PowerType]
 	
@@ -288,8 +287,9 @@ local UpdatePower = function(Power, unit, min, max)
 		Power.Value:SetText(min)
 	end
 	
-	if (unit == 'pet' and GetPetHappiness()) then
-		Power:SetStatusBarColor(UnitHappiness[1], UnitHappiness[2], UnitHappiness[3])
+	if (unit == 'pet' and SPELL_POWER_HAPPINESS and GetPetHappiness()) then
+        local UnitHappiness = self.colors.happiness[GetPetHappiness()]
+		Power:SetStatusBarColor(UnitHappiness.r, UnitHappiness.g, UnitHappiness.b)
 	else
 		Power:SetStatusBarColor(UnitPower.r, UnitPower.g, UnitPower.b)
 	end
@@ -445,7 +445,7 @@ local Stylish = function(self, unit, isSingle)
 	-- Turn on the smoothness
 	self.Health.Smooth = true
 	
-	self.Health.frequentUpdates = true
+	self.Health.frequentUpdates = 0.2
 	
 	self.Health:SetParent(self)
 	self.Health:SetPoint('TOP')
@@ -481,8 +481,8 @@ local Stylish = function(self, unit, isSingle)
 	self.Power.colorClass = true
 	self.Power.colorReaction = true
 	
-	-- We like to keep things smooth here
-	self.Power.frequentUpdates = true
+	-- We like to keep things smooth around here
+	self.Power.frequentUpdates = 0.2
 	
 	self.Power:SetParent(self)
 	self.Power:SetPoint('BOTTOM')
@@ -698,6 +698,9 @@ local Stylish = function(self, unit, isSingle)
 		name:SetWidth(130)
         name:SetParent(self.Overlay)
 		name:SetHeight(Settings.Media.FontSize)
+        
+        name.frequentUpdates = 0.2
+        
 		self.Info = name
 		if (unit == 'target') then
 			self:Tag(self.Info, '[LanLevel] [LanName]')
@@ -1026,6 +1029,7 @@ local function StylishGroup(self, unit)
 	end
 	
 	self.Health.Smooth = true
+    self.Health.frequentUpdates = 0.3
 	
 	-- Health bar background display for group frames
 	self.Health.Background = self.Health:CreateTexture('$parentHealthBackground', 'BORDER')
@@ -1048,6 +1052,8 @@ local function StylishGroup(self, unit)
 	self.Name:SetPoint('LEFT', self.Health, 5, 1)
 	self.Name:SetFont(Settings.Media.Font, 13)
 	self.Name:SetShadowOffset(1, -1)
+    self.Name.frequentUpdates = 0.3
+    
 	self:Tag(self.Name, '|cffffffff[LanName]|r')
 	
 	if (Settings.Units.Party.Healer) then
@@ -1178,6 +1184,7 @@ local function StylishRaid(self, unit)
 	end
 	
 	self.Health.Smooth = true
+    self.Health.frequentUpdates = 0.3
 	
 	-- Health bar background display for group frames
 	self.Health.Background = self.Health:CreateTexture('$parentHealthBackground', 'BORDER')
@@ -1211,6 +1218,8 @@ local function StylishRaid(self, unit)
 		self:Tag(self.Name, '|cffffffff[LanName]|r')
 		self.Health:SetOrientation('HORIZONTAL')
 	end
+    
+    self.Name.frequentUpdates = 0.3
     
     if isHealer then
 		local MHPB = CreateFrame('StatusBar', nil, self.Health)

@@ -1,4 +1,5 @@
 -- Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
+
 -- Define some custom oUF tags
 oUF.Tags['LanPvPTime'] = function(unit)
 	return UnitIsPVP(unit) and not IsPVPTimerRunning() and '*' or IsPVPTimerRunning() and ('%d:%02d'):format((GetPVPTimer() / 1000) / 60, (GetPVPTimer() / 1000) % 60)
