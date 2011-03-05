@@ -274,44 +274,6 @@ local function UpdateRaidHealth(Health, unit, min, max)
 	end
 end
 
--- Now for the update power function
-local UpdatePower = function(Power, unit, min, max)
-	local self = Power:GetParent()
-	
-	if (min == 0 or UnitIsDead(unit) or UnitIsGhost(unit) or unit == 'pet' or unit == 'focus' or unit ~= 'player' or not UnitIsConnected(unit)) then
-		Power.Value:SetText()
-	else
-		Power.Value:SetText(min)
-	end
-    
-    local color
-	if UnitIsPlayer(unit) then
-		local _, class = UnitClass(unit)
-		color = colors.class[class]
-        Power:SetStatusBarColor(color[1], color[2], color[3], 1)
-	elseif UnitIsTapped(unit) and not UnitIsTappedByPlayer(unit) then
-		color = colors.tapped
-        Power:SetStatusBarColor(color[1], color[2], color[3], 1)
-    elseif UnitIsUnit(unit, 'pet') and GetPetHappiness() then
-        color = colors.happiness[GetPetHappiness()]
-        Power:SetStatusBarColor(color[1], color[2], color[3], 1)
-	elseif UnitIsEnemy(unit, "player") then
-		color = colors.reaction[1]
-        Power:SetStatusBarColor(color[1], color[2], color[3], 1)
-	else
-        if (unit ~= 'pet') then
-            color = colors.reaction[UnitReaction(unit, "player") or 5]
-            Power:SetStatusBarColor(color[1], color[2], color[3], 1)
-        end
-	end
-end
-
---~ local PetUpdatePower = function(Power, unit, min, max)
---~     local color
---~     color = colors.happiness[GetPetHappiness()]
---~     Power:SetStatusBarColor(color[1], color[2], color[3], 1)
---~ end
-
 -- Add DruidPower support
 local function UpdateDruidPower(self, event, unit)
     if (unit and unit ~= self.unit) then 
@@ -544,15 +506,8 @@ local Stylish = function(self, unit, isSingle)
         end
 	end
 
-    if (unit == 'pet') then
-        self:RegisterEvent('UNIT_HAPPINESS', UpdatePower)
-    end
+--~     self.Power.PostUpdate = UpdatePower
     
---~         self.Power.PostUpdate = PetUpdatePower
---~     else
-    self.Power.PostUpdate = UpdatePower
---~     end
-	
 	if (unit == 'targettarget') then
 		self.Power:Hide()
 		self.Power.Show = self.Power.Hide
@@ -731,6 +686,8 @@ local Stylish = function(self, unit, isSingle)
 			self:Tag(self.Info, '[LanLevel] [LanName]')
 		elseif (unit == 'focus') then
 			name:SetText()
+        elseif (unit == 'targettarget') then
+            self:Tag(self.Info, '[LanShortName]')
         else
 			self:Tag(self.Info, '[LanName]')
 		end

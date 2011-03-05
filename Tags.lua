@@ -52,6 +52,12 @@ oUF.Tags['LanRaidName'] = function(unit)
 	return Name
 end
 
+oUF.TagEvents['LanShortName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
+oUF.Tags['LanShortName'] = function(unit)
+    local Name = string.sub(UnitName(unit), 1, 8)..'...'
+	return Name
+end
+
 oUF.TagEvents['LanPower'] = 'UNIT_ENERGY UNIT_FOCUS UNIT_MANA UNIT_RAGE UNIT_MAXRUNIC_POWER UNIT_RUNIC_POWER'
 oUF.Tags['LanPower'] = function(unit)
     local min = UnitPower(unit)
