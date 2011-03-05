@@ -1,7 +1,7 @@
 --[[
-	Version = 1.13
+	Version = 1.14
 	
-    Copyright Â© 2010-2011 Lanerra. See LICENSE file for license terms.
+    Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
     
 	Special thanks to P3lim for inspiration, Neav for textures and inspiration,
     Game92 for inspiration, and Phanx for inspiration and an inline border method
@@ -9,6 +9,8 @@
 
 ---- Lazy Stuff Goes Here!
 local _, ns = ...
+
+local colors = oUF.colors
 
 local playerClass = select(2, UnitClass('player'))
 local isHealer = (playerClass == 'DRUID' or playerClass == 'PALADIN' or playerClass == 'PRIEST' or playerClass == 'SHAMAN')
@@ -35,8 +37,6 @@ PowerBarColor['FOCUS'] = { r = 255/255, g = 175/255, b = 0 }
 PowerBarColor['ENERGY'] = { r = 1, g = 1, b = 35/255 }
 PowerBarColor['RUNIC_POWER'] = { r = 0.45, g = 0.85, b = 1 }
 
-local Colors = oUF.colors
-
 -- Threat color handling
 oUF.colors.threat = { }
 for i = 1, 3 do
@@ -45,10 +45,10 @@ for i = 1, 3 do
 end
 
 -- Debuff color handling
-Colors.Debuff = { }
+colors.Debuff = { }
 for type, color in pairs(DebuffTypeColor) do
 	if (type ~= 'none') then
-		Colors.Debuff[type] = { color.r, color.g, color.b }
+		colors.Debuff[type] = { color.r, color.g, color.b }
 	end
 end
 
@@ -66,19 +66,19 @@ end
 local function UpdateBorder(self)
 	local Threat, Debuff, Dispellable = self.threatLevel, self.debuffType, self.debuffDispellable
 
-	local Color
+	local color
 	if Debuff and Dispellable then
-		Color = Colors.Debuff[Debuff]
+		color = colors.Debuff[Debuff]
     elseif Threat and Threat > 1 then
-        Color = oUF.colors.threat[Threat]
+        color = colors.threat[Threat]
 	elseif Debuff then
-		Color = Colors.Debuff[Debuff]
+		color = colors.Debuff[Debuff]
     elseif Threat and Threat > 0 then
-        Color = oUF.colors.threat[Threat]
+        color = colors.threat[Threat]
 	end
 
-	if Color then
-		self:SetBackdropBorderColor(Color[1], Color[2], Color[3], 1)
+	if color then
+		self:SetBackdropBorderColor(color[1], color[2], color[3], 1)
 	else
 		self:SetBackdropBorderColor(0, 0, 0, 0)
 	end
@@ -278,22 +278,39 @@ end
 local UpdatePower = function(Power, unit, min, max)
 	local self = Power:GetParent()
 	
-	local _, PowerType, altR, altG, altB = UnitPowerType(unit)
-	local UnitPower = PowerBarColor[PowerType]
-	
 	if (min == 0 or UnitIsDead(unit) or UnitIsGhost(unit) or unit == 'pet' or unit == 'focus' or unit ~= 'player' or not UnitIsConnected(unit)) then
 		Power.Value:SetText()
 	else
 		Power.Value:SetText(min)
 	end
-	
-	if (unit == 'pet' and SPELL_POWER_HAPPINESS and GetPetHappiness()) then
-        local UnitHappiness = self.colors.happiness[GetPetHappiness()]
-		Power:SetStatusBarColor(UnitHappiness.r, UnitHappiness.g, UnitHappiness.b)
+    
+    local color
+	if UnitIsPlayer(unit) then
+		local _, class = UnitClass(unit)
+		color = colors.class[class]
+        Power:SetStatusBarColor(color[1], color[2], color[3], 1)
+	elseif UnitIsTapped(unit) and not UnitIsTappedByPlayer(unit) then
+		color = colors.tapped
+        Power:SetStatusBarColor(color[1], color[2], color[3], 1)
+    elseif UnitIsUnit(unit, 'pet') and GetPetHappiness() then
+        color = colors.happiness[GetPetHappiness()]
+        Power:SetStatusBarColor(color[1], color[2], color[3], 1)
+	elseif UnitIsEnemy(unit, "player") then
+		color = colors.reaction[1]
+        Power:SetStatusBarColor(color[1], color[2], color[3], 1)
 	else
-		Power:SetStatusBarColor(UnitPower.r, UnitPower.g, UnitPower.b)
+        if (unit ~= 'pet') then
+            color = colors.reaction[UnitReaction(unit, "player") or 5]
+            Power:SetStatusBarColor(color[1], color[2], color[3], 1)
+        end
 	end
 end
+
+--~ local PetUpdatePower = function(Power, unit, min, max)
+--~     local color
+--~     color = colors.happiness[GetPetHappiness()]
+--~     Power:SetStatusBarColor(color[1], color[2], color[3], 1)
+--~ end
 
 -- Add DruidPower support
 local function UpdateDruidPower(self, event, unit)
@@ -475,14 +492,15 @@ local Stylish = function(self, unit, isSingle)
 	self.Power = CreateFrame('StatusBar', '$parentPowerBar', self)
 	self.Power:SetHeight(Settings.Units.Player.Height * .22)
 	self.Power:SetStatusBarTexture(Settings.Media.StatusBar)
-	
-	self.Power.colorTapping = true
-	self.Power.colorHappiness = true
+    
 	self.Power.colorClass = true
-	self.Power.colorReaction = true
+	self.Power.colorTapping = true
+    self.Power.colorReaction = unit ~= 'pet'
+    self.Power.colorHappiness = unit == 'pet'
 	
 	-- We like to keep things smooth around here
 	self.Power.frequentUpdates = 0.2
+    self.Power.Smooth = true
 	
 	self.Power:SetParent(self)
 	self.Power:SetPoint('BOTTOM')
@@ -526,7 +544,14 @@ local Stylish = function(self, unit, isSingle)
         end
 	end
 
-	self.PostUpdatePower = UpdatePower
+    if (unit == 'pet') then
+        self:RegisterEvent('UNIT_HAPPINESS', UpdatePower)
+    end
+    
+--~         self.Power.PostUpdate = PetUpdatePower
+--~     else
+    self.Power.PostUpdate = UpdatePower
+--~     end
 	
 	if (unit == 'targettarget') then
 		self.Power:Hide()
@@ -706,7 +731,7 @@ local Stylish = function(self, unit, isSingle)
 			self:Tag(self.Info, '[LanLevel] [LanName]')
 		elseif (unit == 'focus') then
 			name:SetText()
-		else
+        else
 			self:Tag(self.Info, '[LanName]')
 		end
 	end
