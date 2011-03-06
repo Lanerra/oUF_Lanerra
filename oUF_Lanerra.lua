@@ -411,6 +411,10 @@ end
 -- Time to give our solo unit frames some style!
 local Stylish = function(self, unit, isSingle)
 	self.menu = CreateDropDown
+    
+    self:SetScript("OnEnter", UnitFrame_OnEnter)
+    self:SetScript("OnLeave", UnitFrame_OnLeave)
+    
 	self.ignoreHealComm = true
 	
 	self:EnableMouse(true)
@@ -980,6 +984,10 @@ end
 -- First build the group style
 local function StylishGroup(self, unit)
 	self.menu = CreateDropDown
+    
+    self:SetScript("OnEnter", UnitFrame_OnEnter)
+    self:SetScript("OnLeave", UnitFrame_OnLeave)
+    
 	self.ignoreHealComm = true
 	
 	self:EnableMouse(true)
@@ -1135,6 +1143,10 @@ end
 -- Now the raid style
 local function StylishRaid(self, unit)
 	self.menu = CreateDropDown
+    
+    self:SetScript("OnEnter", UnitFrame_OnEnter)
+    self:SetScript("OnLeave", UnitFrame_OnLeave)
+    
 	self.ignoreHealComm = true
 	
 	self:EnableMouse(true)
