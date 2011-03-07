@@ -465,8 +465,10 @@ local Stylish = function(self, unit, isSingle)
     self.Power.colorHappiness = unit == 'pet'
 	
 	-- We like to keep things smooth around here
-	self.Power.frequentUpdates = 0.2
-    self.Power.Smooth = true
+    if (unit ~= 'pet') then
+        self.Power.frequentUpdates = 0.2
+        self.Power.Smooth = true
+    end
 	
 	self.Power:SetParent(self)
 	self.Power:SetPoint('BOTTOM')
@@ -510,8 +512,6 @@ local Stylish = function(self, unit, isSingle)
         end
 	end
 
---~     self.Power.PostUpdate = UpdatePower
-    
 	if (unit == 'targettarget') then
 		self.Power:Hide()
 		self.Power.Show = self.Power.Hide
