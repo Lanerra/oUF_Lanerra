@@ -465,11 +465,9 @@ local Stylish = function(self, unit, isSingle)
     self.Power.colorHappiness = unit == 'pet'
 	
 	-- We like to keep things smooth around here
-    if (unit ~= 'pet') then
-        self.Power.frequentUpdates = 0.2
-        self.Power.Smooth = true
-    end
-	
+    self.Power.frequentUpdates = 0.2
+    self.Power.Smooth = true
+    	
 	self.Power:SetParent(self)
 	self.Power:SetPoint('BOTTOM')
 	self.Power:SetPoint('LEFT', .2, 0)
