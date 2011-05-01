@@ -1,5 +1,5 @@
 --[[
-	Version = 1.15
+	Version = 1.17
 	
     Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
     
@@ -461,9 +461,8 @@ local Stylish = function(self, unit, isSingle)
     
 	self.Power.colorClass = true
 	self.Power.colorTapping = true
-    self.Power.colorReaction = unit ~= 'pet'
-    self.Power.colorHappiness = unit == 'pet'
-	
+    self.Power.colorReaction = true
+    	
 	-- We like to keep things smooth around here
     self.Power.frequentUpdates = 0.2
     self.Power.Smooth = true
@@ -685,7 +684,7 @@ local Stylish = function(self, unit, isSingle)
         
 		self.Info = name
 		if (unit == 'target') then
-			self:Tag(self.Info, '[LanLevel] [LanName]')
+			self:Tag(self.Info, '[LanLevel][shortclassification] [LanName]')
 		elseif (unit == 'focus') then
 			name:SetText()
         elseif (unit == 'targettarget') then

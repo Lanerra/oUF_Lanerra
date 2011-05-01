@@ -54,8 +54,13 @@ end
 
 oUF.TagEvents['LanShortName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
 oUF.Tags['LanShortName'] = function(unit)
-    local Name = string.sub(UnitName(unit), 1, 8)..'...'
-	return Name
+    local name = UnitName(unit)
+    if strlen(name) > 8 then
+        local NewName = string.sub(UnitName(unit), 1, 8)..'...'
+        return NewName
+    else
+        return name
+    end
 end
 
 oUF.TagEvents['LanPower'] = 'UNIT_ENERGY UNIT_FOCUS UNIT_MANA UNIT_RAGE UNIT_MAXRUNIC_POWER UNIT_RUNIC_POWER'
