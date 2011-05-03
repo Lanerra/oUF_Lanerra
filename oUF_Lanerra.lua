@@ -99,19 +99,41 @@ local function ShortValue(value)
 	end
 end
 
--- Dropdown menu function for our unit frames
+local dropdown = CreateFrame('Frame', 'oUF_LanerraDropDown', UIParent, 'UIDropDownMenuTemplate')
+
+UIDropDownMenu_Initialize(dropdown, function(self)
+	local unit = self:GetParent().unit
+	if not unit then return end
+
+	local menu, name, id
+	if UnitIsUnit(unit, 'player') then
+		menu = 'SELF'
+	elseif UnitIsUnit(unit, 'vehicle') then
+		menu = 'VEHICLE'
+	elseif UnitIsUnit(unit, 'pet') then
+		menu = 'PET'
+	elseif UnitIsPlayer(unit) then
+		id = UnitInRaid(unit)
+		if id then
+			menu = 'RAID_PLAYER'
+			name = GetRaidRosterInfo(id)
+		elseif UnitInParty(unit) then
+			menu = 'PARTY'
+		else
+			menu = 'PLAYER'
+		end
+	else
+		menu = 'TARGET'
+		name = RAID_TARGET_ICON
+	end
+	if menu then
+		UnitPopup_ShowMenu(self, menu, unit, name, id)
+	end
+end, 'MENU')
+
 local function CreateDropDown(self)
-    local unit = self.unit:gsub('(.)', string.upper, 1)
-    if _G[unit..'FrameDropDown'] then
-        ToggleDropDownMenu(1, nil, _G[unit..'FrameDropDown'], 'cursor')
-    elseif (self.unit:match('party')) then
-        ToggleDropDownMenu(1, nil, _G['PartyMemberFrame'..self.id..'DropDown'], 'cursor')
-    else
-        FriendsDropDown.unit = self.unit
-        FriendsDropDown.id = self.id
-        FriendsDropDown.initialize = RaidFrameDropDown_Initialize
-        ToggleDropDownMenu(1, nil, FriendsDropDown, 'cursor')
-    end
+	dropdown:SetParent(self)
+    ToggleDropDownMenu(1, nil, dropdown, 'cursor', 15, -15)
 end
 
 -- And now for our custom channeling function for our castbars
@@ -496,19 +518,19 @@ local Stylish = function(self, unit, isSingle)
 	end
 	
     if (Settings.Units.Target.ShowPowerText) then
-		if (unit == 'target') then
-			local _, power = UnitPowerType(unit)
-			local c = PowerBarColor[power]
-			self:Tag(self.Power.Value, '[LanPower]')
-			self.Power.Value:SetTextColor(c.r, c.g, c.b)
-		end
+        if (unit == 'target') then
+            local _, power = UnitPowerType(unit)
+	        local c = PowerBarColor[power]
+            self:Tag(self.Power.Value, '[LanPower]')
+            self.Power.Value:SetTextColor(c.r, c.g, c.b)
+        end
     else
         if (unit == 'target') then
             self.Power.Value:Hide()
             self.Power.Value.Show = self.Power.Value.Hide
         end
-	end
-
+    end
+    
 	if (unit == 'targettarget') then
 		self.Power:Hide()
 		self.Power.Show = self.Power.Hide
@@ -1264,6 +1286,10 @@ local function StylishRaid(self, unit)
 
     -- Dispel highlight support
     self.DispelHighlight = UpdateDispelHighlight
+    
+    -- Threat highlight support
+    self.threatLevel = 0
+	self.ThreatHighlight = UpdateThreatHighlight
     
     return self
 end

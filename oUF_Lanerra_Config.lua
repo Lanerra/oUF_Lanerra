@@ -94,7 +94,7 @@ Settings = {
                 ClassColor = true,
             },
             HidePower = true, -- Reserved for future use
-            Healer = true,
+            Healer = true, -- If true, overrides height and width in this section and gets set to a static amount
         },
     },
     CastBars = {
