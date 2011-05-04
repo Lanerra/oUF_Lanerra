@@ -36,6 +36,7 @@ Settings = {
                 Deficit = false,
                 Current = false,
             },
+            ShowPowerText = false,
         },
         Target = {
             Height = 30,
@@ -46,7 +47,7 @@ Settings = {
                 Deficit = false,
                 Current = false,
             },
-            ShowPowerText = false,
+            ShowPowerText = true,
         },
         ToT = {
             Height = 30,

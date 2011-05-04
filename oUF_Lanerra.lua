@@ -8,7 +8,37 @@
 --]]
 
 ---- Lazy Stuff Goes Here!
-local _, ns = ...
+
+-- Disable Blizzard options that are rendered useless by having a unit frame addon
+
+for _, button in pairs({
+    'UnitFramePanelPartyBackground',
+    'UnitFramePanelPartyPets',
+	'UnitFramePanelFullSizeFocusFrame',
+
+    'CombatPanelTargetOfTarget',
+    'CombatPanelTOTDropDown',
+    'CombatPanelTOTDropDownButton',
+    'CombatPanelEnemyCastBarsOnPortrait',
+
+    'DisplayPanelShowAggroPercentage',
+
+    'FrameCategoriesButton9',
+}) do
+    _G['InterfaceOptions'..button]:SetAlpha(0.35)
+    _G['InterfaceOptions'..button]:Disable()
+    _G['InterfaceOptions'..button]:EnableMouse(false)
+end
+
+do 
+    for k, v in pairs(UnitPopupMenus) do
+        for x, i in pairs(UnitPopupMenus[k]) do
+            if (i == 'SET_FOCUS' or i == 'CLEAR_FOCUS') then
+                table.remove(UnitPopupMenus[k],x)
+            end
+        end
+    end
+end
 
 local colors = oUF.colors
 
@@ -158,7 +188,7 @@ local UpdateHealth = function(Health, unit, min, max)
         return
 	end
     
-	if (not unit == 'pet' or unit == 'focus' or unit == 'targettarget') then
+	if (not unit == 'pet' or unit == 'focus' or unit == 'targettarget' or unit == 'player') then
 		if (not UnitIsConnected(unit)) then
 			Health:SetValue(0)
 			Health.Value:SetText('|cffD7BEA5'..'Offline')
@@ -242,10 +272,16 @@ local function UpdateGroupHealth(Health, unit, min, max)
 	if (not UnitIsConnected(unit)) then
         Health:SetValue(0)
         Health.Value:SetText('|cffD7BEA5'..'Offline')
+        
+        return
     elseif (UnitIsDead(unit)) then
         Health.Value:SetText('|cffD7BEA5'..'Dead')
+        
+        return
     elseif (UnitIsGhost(unit)) then
         Health.Value:SetText('|cffD7BEA5'..'Ghost')
+        
+        return
     end
 
     if (Settings.Units.Party.Health.Percent) then
@@ -273,9 +309,11 @@ local function UpdateRaidHealth(Health, unit, min, max)
 	end
 	
 	if (UnitIsDead(unit) or UnitIsGhost(unit) or not UnitIsConnected(unit)) then
-		Health.Value:SetText((UnitIsDead(unit) and 'Dead') or (UnitIsGhost(unit) and 'Ghost') or (not UnitIsConnected(unit) and 'Offline'))
+		Health.Value:SetText((UnitIsDead(unit) and 'DEAD') or (UnitIsGhost(unit) and 'GHOST') or (not UnitIsConnected(unit) and 'OFFL'))
 		Health.Value:SetTextColor(.5, .5, .5)
 		Health:SetStatusBarColor(.5, .5, .5)
+        
+        return
 	else
 		if (Settings.Units.Raid.Health.Percent) then
 			Health.Value:SetText((min / max * 100 < 100 and format('%d%%', min / max * 100)) or '')
@@ -296,19 +334,42 @@ local function UpdateRaidHealth(Health, unit, min, max)
 	end
 end
 
+-- Custom Power Updating Function
+local function UpdatePower(Power, unit, min, max)
+    local self = Power:GetParent()
+
+	local _, PowerType, altR, altG, altB = UnitPowerType(unit)
+	local UnitPower = PowerBarColor[PowerType]
+
+    if (UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit)) then
+        Power:SetValue(0)
+        Power.Value:SetText('')
+    elseif (unit == 'player' and Settings.Units.Player.ShowPowerText or unit == 'target' and Settings.Units.Target.ShowPowerText or unit == 'pet' and Settings.Units.Pet.ShowPowerText) then
+        Power.Value:SetText((min/max * 100 < 100 and format('%d%%', min/max * 100)))
+    else
+        Power.Value:SetText()
+    end
+
+    if (UnitPower) then
+        Power.Value:SetTextColor(UnitPower.r, UnitPower.g, UnitPower.b)
+	else
+        Power.Value:SetTextColor(altR, altG, altB)
+	end
+end
+
 -- Add DruidPower support
 local function UpdateDruidPower(self, event, unit)
     if (unit and unit ~= self.unit) then 
         return 
     end
     
-	local unitPower = PowerBarColor['MANA']
+	local UnitPower = PowerBarColor['MANA']
     local mana = UnitPowerType('player') == 0
     local index = GetShapeshiftForm()
 
     if (index == 1 or index == 3) then
-        if (unitPower) then
-            self.Druid.Power:SetStatusBarColor(unitPower.r, unitPower.g, unitPower.b)
+        if (UnitPower) then
+            self.Druid.Power:SetStatusBarColor(UnitPower.r, UnitPower.g, UnitPower.b)
         end
         
         self.Druid.Power:SetAlpha(1)
@@ -472,7 +533,7 @@ local Stylish = function(self, unit, isSingle)
 	self.Health.Value:SetFont(Settings.Media.Font, Settings.Media.FontSize)
 	self.Health.Value:SetShadowOffset(1, -1)
 	self.Health.Value:SetTextColor(1, 1, 1)
-	self.Health.Value:SetPoint('RIGHT', self.Health, -2, 0)
+    self.Health.Value:SetPoint('RIGHT', self.Health, -2, 0)
 	
 	self.Health.PostUpdate = UpdateHealth
 	
@@ -498,46 +559,25 @@ local Stylish = function(self, unit, isSingle)
 	self.Power.Value = self.Power:CreateFontString('$parentPowerValue', 'OVERLAY')
 	self.Power.Value:SetFont(Settings.Media.Font, Settings.Media.FontSize)
 	self.Power.Value:SetShadowOffset(1, -1)
-	self.Power.Value:SetPoint('LEFT', self.Health.Value, 'RIGHT', -195, 0)
+    if (unit == 'target') then
+        self.Power.Value:SetPoint('BOTTOM', self, 0, 2)
+    elseif (unit == 'player') then
+        self.Power.Value:SetPoint('LEFT', self.Health.Value, 'RIGHT', -195, 0)
+    elseif (unit == 'pet') then
+        self.Power.Value:SetPoint('CENTER', self.Health)
+    end
+	
 	self.Power.Value:SetTextColor(1, 1, 1)
     self.Power.Value:SetJustifyH('LEFT')
     self.Power.Value.frequentUpdates = 0.1
-    
-    if (Settings.Units.Player.ShowPowerText) then
-	    if (unit == 'player') then
-	        local _, power = UnitPowerType(unit)
-	        local c = PowerBarColor[power]
-	        self:Tag(self.Power.Value, '[LanPower]')
-	        self.Power.Value:SetTextColor(c.r, c.g, c.b)
-	    end
-    else
-        if (unit == 'player') then
-            self.Power.Value:Hide()
-            self.Power.Value.Show = self.Power.Value.Hide
-        end
-	end
-	
-    if (Settings.Units.Target.ShowPowerText) then
-        if (unit == 'target') then
-            local _, power = UnitPowerType(unit)
-	        local c = PowerBarColor[power]
-            self:Tag(self.Power.Value, '[LanPower]')
-            self.Power.Value:SetTextColor(c.r, c.g, c.b)
-        end
-    else
-        if (unit == 'target') then
-            self.Power.Value:Hide()
-            self.Power.Value.Show = self.Power.Value.Hide
-        end
-    end
     
 	if (unit == 'targettarget') then
 		self.Power:Hide()
 		self.Power.Show = self.Power.Hide
 		self.Health:SetAllPoints(self)
 	end
-
-	if (unit == 'focus') then
+    
+    if (unit == 'focus') then
 		self.Power:Hide()
 		self.Power.Show = self.Power.Hide
 		self.Health:SetAllPoints(self)
@@ -688,34 +728,38 @@ local Stylish = function(self, unit, isSingle)
 	-- Display the names
 	if (unit ~= 'player') then
 		local name = self.Health:CreateFontString('$parentName', 'OVERLAY')
-		if (unit == 'targettarget' or unit == 'pet') then
-			name:SetPoint('CENTER')
-		else
-			name:SetPoint('LEFT', self.Health, 'LEFT', 1, 0)
-			name:SetJustifyH('LEFT')
-		end
-		
 		name:SetFont(Settings.Media.Font, Settings.Media.FontSize)
 		name:SetShadowOffset(1, -1)
 		name:SetTextColor(1, 1, 1)
 		name:SetWidth(130)
         name:SetParent(self.Overlay)
 		name:SetHeight(Settings.Media.FontSize)
-        
         name.frequentUpdates = 0.2
         
-		self.Info = name
-		if (unit == 'target') then
-			self:Tag(self.Info, '[LanLevel][shortclassification] [LanName]')
-		elseif (unit == 'focus') then
-			name:SetText()
-        elseif (unit == 'targettarget') then
+        self.Info = name
+        if (unit == 'targettarget') then
+            name:SetPoint('CENTER')
             self:Tag(self.Info, '[LanShortName]')
+		elseif (unit == 'pet' and Settings.Units.Pet.ShowPowerText) then
+            name:Hide()
+        elseif (unit == 'pet' and not Settings.Units.Pet.ShowPowerText) then
+            name:SetPoint('CENTER', self.Health)
+            self:Tag(self.Info, '[LanName]')
+        elseif (unit == 'focus') then
+            name:SetText()
+        elseif (unit == 'target') then
+            name:SetPoint('LEFT', self.Health, 'LEFT', 1, 0)
+			name:SetJustifyH('LEFT')
+            self:Tag(self.Info, '[LanLevel][shortclassification] [LanName]')
         else
-			self:Tag(self.Info, '[LanName]')
+			name:SetPoint('LEFT', self.Health, 'LEFT', 1, 0)
+			name:SetJustifyH('LEFT')
+            self:Tag(self.Info, '[LanName]')
 		end
-	end
+    end
 	
+    self.Power.PostUpdate = UpdatePower
+    
     if (isHealer) then
         if (unit == 'target') then
             local MHPB = CreateFrame('StatusBar', nil, self.Health)
@@ -1063,8 +1107,8 @@ local function StylishGroup(self, unit)
 	self.Name:SetShadowOffset(1, -1)
     self.Name.frequentUpdates = 0.3
     
-	self:Tag(self.Name, '|cffffffff[LanName]|r')
-	
+    self:Tag(self.Name, '|cffffffff[LanName]|r')
+    	
 	if (Settings.Units.Party.Healer) then
 		self.Name:SetPoint('CENTER', self.Health)
 	end
@@ -1216,7 +1260,7 @@ local function StylishRaid(self, unit)
 	self.Overlay:SetFrameLevel(self.Health:GetFrameLevel() + (self.Power and 3 or 2))
 		
 	-- Display group names
-	if (Settings.Units.Raid.Healer) then
+    if (Settings.Units.Raid.Healer) then
 		self.Name = self.Health:CreateFontString('$parentName', 'OVERLAY')
 		self.Name:SetPoint('TOP', 0, -2)
 		self.Name:SetFont(Settings.Media.Font, 13)
