@@ -11,6 +11,29 @@ oUF.Tags['LanThreat'] = function()
 	return perc and ('%s%d%%|r'):format(hex(GetThreatStatusColor(UnitThreatSituation('player', 'target'))), perc)
 end
 
+oUF.TagEvents['LanClassification'] = 'UNIT_CLASSIFICATION_CHANGED'
+oUF.Tags['LanClassification'] = function(unit)
+    local level = UnitLevel(unit)
+    local colorL = GetQuestDifficultyColor(level)
+    
+    if (level < 0) then
+        r, g, b = 1, 0, 0
+    else
+        r, g, b = colorL.r, colorL.g, colorL.b
+    end
+    
+    local c = UnitClassification(unit)
+    if(c == 'rare') then
+        return format('|cff%02x%02x%02x%s|r', r*255, g*255, b*255, 'R')
+    elseif(c == 'eliterare') then
+        return format('|cff%02x%02x%02x%s|r', r*255, g*255, b*255, 'R+')
+    elseif(c == 'elite') then
+        return format('|cff%02x%02x%02x%s|r', r*255, g*255, b*255, '+')
+    elseif(c == 'worldboss') then
+        return format('|cff%02x%02x%02x%s|r', r*255, g*255, b*255, 'B')
+    end
+end
+
 oUF.Tags['LanLevel'] = function(unit)
     local level = UnitLevel(unit)
     local colorL = GetQuestDifficultyColor(level)

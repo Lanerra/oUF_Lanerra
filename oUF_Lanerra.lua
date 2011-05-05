@@ -40,6 +40,11 @@ do
     end
 end
 
+-------------------------------------------------
+-- Variables for defining colors and appearance
+-------------------------------------------------
+
+
 local colors = oUF.colors
 
 local playerClass = select(2, UnitClass('player'))
@@ -129,6 +134,12 @@ local function ShortValue(value)
 	end
 end
 
+------------------------------------------
+-- Functions used to build Unit Frames
+------------------------------------------
+
+
+-- Build dropdown menus
 local dropdown = CreateFrame('Frame', 'oUF_LanerraDropDown', UIParent, 'UIDropDownMenuTemplate')
 
 UIDropDownMenu_Initialize(dropdown, function(self)
@@ -560,11 +571,9 @@ local Stylish = function(self, unit, isSingle)
 	self.Power.Value:SetFont(Settings.Media.Font, Settings.Media.FontSize)
 	self.Power.Value:SetShadowOffset(1, -1)
     if (unit == 'target') then
-        self.Power.Value:SetPoint('BOTTOM', self, 0, 2)
+        self.Power.Value:SetPoint('TOPRIGHT', self.Power, 'BOTTOMRIGHT', 0, -5)
     elseif (unit == 'player') then
         self.Power.Value:SetPoint('LEFT', self.Health.Value, 'RIGHT', -195, 0)
-    elseif (unit == 'pet') then
-        self.Power.Value:SetPoint('CENTER', self.Health)
     end
 	
 	self.Power.Value:SetTextColor(1, 1, 1)
@@ -577,7 +586,7 @@ local Stylish = function(self, unit, isSingle)
 		self.Health:SetAllPoints(self)
 	end
     
-    if (unit == 'focus') then
+    if (unit == 'focus' and Settings.Units.Focus.VerticalHealth) then
 		self.Power:Hide()
 		self.Power.Show = self.Power.Hide
 		self.Health:SetAllPoints(self)
@@ -586,6 +595,8 @@ local Stylish = function(self, unit, isSingle)
 		self.Health:SetOrientation('HORIZONTAL')
 	end
 	
+    self.Power.PostUpdate = UpdatePower
+    
     -- Improve border drawing
     self.Overlay = CreateFrame('Frame', nil, self)
 	self.Overlay:SetAllPoints(self)
@@ -742,6 +753,11 @@ local Stylish = function(self, unit, isSingle)
             self:Tag(self.Info, '[LanShortName]')
 		elseif (unit == 'pet' and Settings.Units.Pet.ShowPowerText) then
             name:Hide()
+            
+            if (Settings.Units.Pet.Health.Percent or Settings.Units.Pet.Health.Deficit or Settings.Units.Pet.Health.Current) then
+                self.Power.Value:SetPoint('RIGHT', self.Health, -2, 0)
+                self.Health.Value:SetPoint('LEFT', self.Health, -40, -1)
+            end
         elseif (unit == 'pet' and not Settings.Units.Pet.ShowPowerText) then
             name:SetPoint('CENTER', self.Health)
             self:Tag(self.Info, '[LanName]')
@@ -750,15 +766,13 @@ local Stylish = function(self, unit, isSingle)
         elseif (unit == 'target') then
             name:SetPoint('LEFT', self.Health, 'LEFT', 1, 0)
 			name:SetJustifyH('LEFT')
-            self:Tag(self.Info, '[LanLevel][shortclassification] [LanName]')
+            self:Tag(self.Info, '[LanLevel][LanClassification] [LanName]')
         else
 			name:SetPoint('LEFT', self.Health, 'LEFT', 1, 0)
 			name:SetJustifyH('LEFT')
             self:Tag(self.Info, '[LanName]')
 		end
     end
-	
-    self.Power.PostUpdate = UpdatePower
     
     if (isHealer) then
         if (unit == 'target') then

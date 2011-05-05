@@ -68,6 +68,7 @@ Settings = {
                 Deficit = false,
                 Current = false,
             },
+            VerticalHealth = true,
         },
         Party = {
             Height = 20,
