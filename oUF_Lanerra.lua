@@ -530,7 +530,7 @@ local Stylish = function(self, unit, isSingle)
 	self.Health:SetPoint('RIGHT')
 	
 	self:SetBackdrop(backdrop)
-	self:SetBackdropColor(0, 0, 0, .75)
+	self:SetBackdropColor(unpack(Settings.Media.BackdropColor))
 	
 	if (unit == 'player') then
 		local info = self.Health:CreateFontString('$parentInfo', 'OVERLAY', 'GameFontHighlightSmall')
@@ -544,7 +544,7 @@ local Stylish = function(self, unit, isSingle)
 	self.Health.Value:SetFont(Settings.Media.Font, Settings.Media.FontSize)
 	self.Health.Value:SetShadowOffset(1, -1)
 	self.Health.Value:SetTextColor(1, 1, 1)
-    self.Health.Value:SetPoint('RIGHT', self.Health, -2, 0)
+--~     self.Health.Value:SetPoint('RIGHT', self.Health, -2, 0)
 	
 	self.Health.PostUpdate = UpdateHealth
 	
@@ -747,16 +747,29 @@ local Stylish = function(self, unit, isSingle)
 		name:SetHeight(Settings.Media.FontSize)
         name.frequentUpdates = 0.2
         
+        self.Health.Value:SetParent(self.Overlay)
+        
         self.Info = name
+        self:Tag(self.Info, '[LanShortName]')
+        
         if (unit == 'targettarget') then
-            name:SetPoint('CENTER')
-            self:Tag(self.Info, '[LanShortName]')
+            self.Health.Value:SetPoint('BOTTOM', self.Health, 0, 1)
+            self.Health.Value:Hide()
+            
+            if (Settings.Units.ToT.Health.Percent or Settings.Units.ToT.Health.Deficit or Settings.Units.ToT.Health.Current) then
+                name:SetPoint('TOP', self.Health, 0, -1)
+                self.Health.Value:Show()
+            else
+                name:SetPoint('CENTER', self.Health)
+                name:Show()
+                self.Health.Value:Hide()
+            end
 		elseif (unit == 'pet' and Settings.Units.Pet.ShowPowerText) then
             name:Hide()
             
             if (Settings.Units.Pet.Health.Percent or Settings.Units.Pet.Health.Deficit or Settings.Units.Pet.Health.Current) then
                 self.Power.Value:SetPoint('RIGHT', self.Health, -2, 0)
-                self.Health.Value:SetPoint('LEFT', self.Health, -40, -1)
+                self.Health.Value:SetPoint('LEFT', self.Health, 2, -1)
             end
         elseif (unit == 'pet' and not Settings.Units.Pet.ShowPowerText) then
             name:SetPoint('CENTER', self.Health)
@@ -767,11 +780,14 @@ local Stylish = function(self, unit, isSingle)
             name:SetPoint('LEFT', self.Health, 'LEFT', 1, 0)
 			name:SetJustifyH('LEFT')
             self:Tag(self.Info, '[LanLevel][LanClassification] [LanName]')
+            self.Health.Value:SetPoint('RIGHT', self.Health, -2, -1)
         else
 			name:SetPoint('LEFT', self.Health, 'LEFT', 1, 0)
 			name:SetJustifyH('LEFT')
             self:Tag(self.Info, '[LanName]')
 		end
+    else
+        self.Health.Value:SetPoint('RIGHT', self.Health, -2, -1)
     end
     
     if (isHealer) then

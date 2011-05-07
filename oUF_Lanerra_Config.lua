@@ -14,6 +14,7 @@ Settings = {
         FontSize = 15,
         BorderSize = 14,
         BorderColor = { .65, .65, .65 },
+        BackdropColor = { 0, 0, 0, 0.75 }
     },
     Units = {
         Player = {
