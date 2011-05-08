@@ -27,6 +27,7 @@ Settings = {
                 Current = true,
             },
             ShowPowerText = true,
+            ShowBuffs = false,
         },
         Pet = {
             Height = 30,

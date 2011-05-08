@@ -837,7 +837,7 @@ local Stylish = function(self, unit, isSingle)
     end
     
     -- Aura/buff/debuff handling, update those suckers!
-    if (unit == 'player') then
+    if (unit == 'player' and Settings.Units.Player.ShowBuffs) then
 		local GAP = 6
 
 		self.Buffs = CreateFrame('Frame', nil, self)
@@ -861,12 +861,9 @@ local Stylish = function(self, unit, isSingle)
 	elseif (unit == 'target') then
 		local GAP = 6
 
---		local MAX_ICONS = math.floor((Settings.Units.Target.Width - 4 + GAP) / (Settings.Units.Target.Height + GAP)) - 1
-		local MAX_ICONS = 10
---		local NUM_BUFFS = math.max(2, math.floor(MAX_ICONS * 0.4))
-		local NUM_BUFFS = 4
---		local NUM_DEBUFFS = math.min(MAX_ICONS - 1, math.floor(MAX_ICONS * 0.8))
-		local NUM_DEBUFFS = 6
+		local MAX_ICONS = math.floor((Settings.Units.Target.Width - 4 + GAP) / (Settings.Units.Target.Height + GAP)) - 1
+		local NUM_BUFFS = math.max(2, math.floor(MAX_ICONS * 0.4))
+		local NUM_DEBUFFS = math.min(MAX_ICONS - 1, math.floor(MAX_ICONS * 0.8))
 
 		self.Debuffs = CreateFrame('Frame', nil, self)
 
