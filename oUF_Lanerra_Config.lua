@@ -13,8 +13,9 @@ Settings = {
         Font = 'Interface\\Addons\\oUF_Lanerra\\media\\font.ttf',
         FontSize = 15,
         BorderSize = 14,
-        BorderColor = { .65, .65, .65 },
-        BackdropColor = { 0, 0, 0, 0.75 }
+        BorderColor = { 0.65, 0.65, 0.65 },
+        BackdropColor = { 0, 0, 0, 0.75 },
+        BorderPadding = 4
     },
     Units = {
         Player = {
@@ -38,7 +39,6 @@ Settings = {
                 Deficit = false,
                 Current = false,
             },
-            ShowPowerText = false,
         },
         Target = {
             Height = 30,
@@ -48,6 +48,7 @@ Settings = {
                 Percent = true,
                 Deficit = false,
                 Current = false,
+                PerCur = false,
             },
             ShowPowerText = true,
         },

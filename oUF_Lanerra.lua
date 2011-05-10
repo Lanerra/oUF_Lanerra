@@ -177,20 +177,46 @@ local function CreateDropDown(self)
     ToggleDropDownMenu(1, nil, dropdown, 'cursor', 15, -15)
 end
 
--- And now for our custom channeling function for our castbars
-local function UpdateChannelStart(self, event, unit, name, rank, text)
-    self.Castbar.SafeZone:SetDrawLayer('ARTWORK')
-    self.Castbar.SafeZone:ClearAllPoints()
-    self.Castbar.SafeZone:SetPoint('TOPLEFT', self.Castbar)
-    self.Castbar.SafeZone:SetPoint('BOTTOMLEFT', self.Castbar)
-end
+local Interrupt = 'Interface\\Addons\\oUF_Lanerra\\Media\\BorderInterrupt'
+local Normal = 'Interface\\Addons\\oUF_Lanerra\\Media\\BorderNormal'
 
--- Now, the custom casting function
-local function UpdateCastStart(self, event, unit, name, rank, text, castid)
+local function PostCastStart(Castbar, unit)
     self.Castbar.SafeZone:SetDrawLayer('BORDER')
     self.Castbar.SafeZone:ClearAllPoints()
     self.Castbar.SafeZone:SetPoint('TOPRIGHT', self.Castbar)
     self.Castbar.SafeZone:SetPoint('BOTTOMRIGHT', self.Castbar)
+    
+    if (unit == 'target') then
+        if (self.Castbar.interrupt) then
+            self.Castbar.Border:SetBorderTexture(Interrupt)
+            print('Changed the border, chief!')
+            self.Castbar.Border:SetBorderColor(1, 0, 1)
+            self.Castbar.Border:SetBorderShadowColor(1, 0, 1)
+        else
+            self.Castbar.Border:SetBorderTexture(Normal)
+            self.Castbar.Border:SetBorderColor(1, 1, 1)
+            self.Castbar.Border:SetBorderShadowColor(0, 0, 0)
+        end
+    end
+end
+
+local function PostChannelStart(Castbar, unit)
+    self.Castbar.SafeZone:SetDrawLayer('ARTWORK')
+    self.Castbar.SafeZone:ClearAllPoints()
+    self.Castbar.SafeZone:SetPoint('TOPLEFT', self.Castbar)
+    self.Castbar.SafeZone:SetPoint('BOTTOMLEFT', self.Castbar)
+    
+    if (unit == 'target') then
+        if (self.interrupt) then
+            self.Castbar.Border:SetBorderTexture(Interrupt)
+            self.Castbar.Border:SetBorderColor(1, 0, 1)
+            self.Castbar.Border:SetBorderShadowColor(1, 0, 1)
+        else
+            self.Castbar.Border:SetBorderTexture(Normal)
+            self.Castbar.Border:SetBorderColor(1, 1, 1)
+            self.Castbar.Border:SetBorderShadowColor(0, 0, 0)
+        end
+    end
 end
 
 -- Health update function of doom!
@@ -200,27 +226,15 @@ local UpdateHealth = function(Health, unit, min, max)
 	end
     
 	if (not unit == 'pet' or unit == 'focus' or unit == 'targettarget' or unit == 'player') then
-		if (not UnitIsConnected(unit)) then
-			Health:SetValue(0)
-			Health.Value:SetText('|cffD7BEA5'..'Offline')
-            
-            return
-		elseif (UnitIsDead(unit)) then
+		if (UnitIsDead(unit) or UnitIsGhost(unit) or not UnitIsConnected(unit)) then
             Health:SetValue(0)
-			Health.Value:SetText('|cffD7BEA5'..'Dead')
-            
-            return
-		elseif (UnitIsGhost(unit)) then
-            Health:SetValue(0)
-			Health.Value:SetText('|cffD7BEA5'..'Ghost')
-            
-            return
-		end
+            Health:SetStatusBarColor(.5, .5, .5)
+        end
 	end
 	
 	if (unit == 'player') then
 		if (Settings.Units.Player.Health.Percent) then
-			Health.Value:SetText((min / max * 100 < 100 and format('%d%%', min / max * 100)) or '')
+			Health.Value:SetText((min / max * 100 and format('%d%%', min / max * 100)) or '')
 		elseif (Settings.Units.Player.Health.Deficit) then
 			Health.Value:SetText((min ~= max) and format('%d', min - max) or '')
 		elseif (Settings.Units.Player.Health.Current) then
@@ -230,12 +244,14 @@ local UpdateHealth = function(Health, unit, min, max)
 		end
 	elseif (unit == 'target') then
 		if (Settings.Units.Target.Health.Percent) then
-			Health.Value:SetText((min / max * 100 < 100 and format('%d%%', min / max * 100)) or '')
+			Health.Value:SetText((min / max * 100 and format('%d%%', min / max * 100)) or '')
 		elseif (Settings.Units.Target.Health.Deficit) then
 			Health.Value:SetText((min ~= max) and format('%d', min - max) or '')
 		elseif (Settings.Units.Target.Health.Current) then
 			Health.Value:SetText(ShortValue(min))
-		else
+		elseif (Settings.Units.Target.Health.PerCur) then
+            Health.Value:SetText((min/max * 100 and format('%s - %d%%', ShortValue(min), min/max * 100)))
+        else
 			Health.Value:SetText()
 		end
 	elseif (unit == 'targettarget') then
@@ -280,19 +296,9 @@ local function UpdateGroupHealth(Health, unit, min, max)
 		return
 	end
 	
-	if (not UnitIsConnected(unit)) then
+	if (UnitIsDead(unit) or UnitIsGhost(unit) or not UnitIsConnected(unit)) then
         Health:SetValue(0)
-        Health.Value:SetText('|cffD7BEA5'..'Offline')
-        
-        return
-    elseif (UnitIsDead(unit)) then
-        Health.Value:SetText('|cffD7BEA5'..'Dead')
-        
-        return
-    elseif (UnitIsGhost(unit)) then
-        Health.Value:SetText('|cffD7BEA5'..'Ghost')
-        
-        return
+        Health:SetStatusBarColor(.5, .5, .5)
     end
 
     if (Settings.Units.Party.Health.Percent) then
@@ -320,14 +326,11 @@ local function UpdateRaidHealth(Health, unit, min, max)
 	end
 	
 	if (UnitIsDead(unit) or UnitIsGhost(unit) or not UnitIsConnected(unit)) then
-		Health.Value:SetText((UnitIsDead(unit) and 'DEAD') or (UnitIsGhost(unit) and 'GHOST') or (not UnitIsConnected(unit) and 'OFFL'))
-		Health.Value:SetTextColor(.5, .5, .5)
-		Health:SetStatusBarColor(.5, .5, .5)
-        
-        return
+		Health:SetValue(0)
+        Health:SetStatusBarColor(.5, .5, .5)
 	else
 		if (Settings.Units.Raid.Health.Percent) then
-			Health.Value:SetText((min / max * 100 < 100 and format('%d%%', min / max * 100)) or '')
+			Health.Value:SetText((min / max * 100 and format('%d%%', min / max * 100)) or '')
 		elseif (Settings.Units.Raid.Health.Deficit) then
 			Health.Value:SetText((min ~= max) and format('%d', min - max) or '')
 		elseif (Settings.Units.Raid.Health.Current) then
@@ -355,8 +358,12 @@ local function UpdatePower(Power, unit, min, max)
     if (UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit)) then
         Power:SetValue(0)
         Power.Value:SetText('')
-    elseif (unit == 'player' and Settings.Units.Player.ShowPowerText or unit == 'target' and Settings.Units.Target.ShowPowerText or unit == 'pet' and Settings.Units.Pet.ShowPowerText) then
-        Power.Value:SetText((min/max * 100 < 100 and format('%d%%', min/max * 100)))
+    elseif (unit == 'player' and Settings.Units.Player.ShowPowerText or unit == 'target' and Settings.Units.Target.ShowPowerText) then
+        if (unit == 'target' and max == 0) then
+            Power.Value:SetText('')
+        else
+            Power.Value:SetText((min/max * 100 and format('%d%%', min/max * 100)))
+        end
     else
         Power.Value:SetText()
     end
@@ -408,7 +415,6 @@ local AuraIconCD_OnHide = function(cd)
 	button:SetBorderParent(button)
 	button.count:SetParent(button)
 end
-
 -- Aura Icon Overlay
 local AuraIconOverlay_SetBorderColor = function(overlay, r, g, b)
 	if not r or not g or not b then
@@ -419,7 +425,7 @@ end
 
 -- Aura Icon Creation Function
 local function PostCreateAuraIcon(iconframe, button)
-	AddBorder(button, Settings.Media.BorderSize)
+	AddBorder(button, Settings.Media.BorderSize, Settings.Media.BorderPadding)
 
 	button.cd:SetReverse(true)
 	button.cd:SetScript('OnHide', AuraIconCD_OnHide)
@@ -544,7 +550,6 @@ local Stylish = function(self, unit, isSingle)
 	self.Health.Value:SetFont(Settings.Media.Font, Settings.Media.FontSize)
 	self.Health.Value:SetShadowOffset(1, -1)
 	self.Health.Value:SetTextColor(1, 1, 1)
---~     self.Health.Value:SetPoint('RIGHT', self.Health, -2, 0)
 	
 	self.Health.PostUpdate = UpdateHealth
 	
@@ -610,11 +615,11 @@ local Stylish = function(self, unit, isSingle)
 			self.Castbar:SetScale(Settings.CastBars.Player.Scale)
 			self.Castbar:SetStatusBarColor(unpack(Settings.CastBars.Player.Color))
             
-            self.Border = CreateFrame('Frame', nil, self.Castbar)
-            self.Border:SetAllPoints(self.Castbar)
-            self.Border:SetFrameLevel(self.Castbar:GetFrameLevel() + 2)
+            self.Castbar.Border = CreateFrame('Frame', nil, self.Castbar)
+            self.Castbar.Border:SetAllPoints(self.Castbar)
+            self.Castbar.Border:SetFrameLevel(self.Castbar:GetFrameLevel() + 2)
             
-			AddBorder(self.Border, Settings.Media.BorderSize)
+			AddBorder(self.Castbar.Border, Settings.Media.BorderSize, Settings.Media.BorderPadding)
 			
 			self.Castbar:SetHeight(Settings.CastBars.Player.Height)
 			self.Castbar:SetWidth(Settings.CastBars.Player.Width)
@@ -661,11 +666,11 @@ local Stylish = function(self, unit, isSingle)
 			self.Castbar:SetWidth(Settings.CastBars.Target.Width)
 			self.Castbar:SetScale(Settings.CastBars.Target.Scale)
 			
-            self.Border = CreateFrame('Frame', nil, self.Castbar)
-            self.Border:SetAllPoints(self.Castbar)
-            self.Border:SetFrameLevel(self.Castbar:GetFrameLevel() + 2)
+            self.Castbar.Border = CreateFrame('Frame', nil, self.Castbar)
+            self.Castbar.Border:SetAllPoints(self.Castbar)
+            self.Castbar.Border:SetFrameLevel(self.Castbar:GetFrameLevel() + 2)
             
-			AddBorder(self.Border, Settings.Media.BorderSize)
+			AddBorder(self.Castbar.Border, Settings.Media.BorderSize, Settings.Media.BorderPadding)
 			
 			self.Castbar:SetHeight(Settings.CastBars.Target.Height)
 			self.Castbar:SetParent(self)
@@ -695,8 +700,8 @@ local Stylish = function(self, unit, isSingle)
 				end
 			end
 			
-			self.PostChannelStart = UpdateChannelStart
-			self.PostCastStart = UpdateCastStart
+			self.PostChannelStart = PostChannelStart
+			self.PostCastStart = PostCastStart
 		end
 	end
 	
@@ -715,7 +720,7 @@ local Stylish = function(self, unit, isSingle)
         MirrorBorder = CreateFrame('Frame', nil, _G[bar])
         MirrorBorder:SetAllPoints(_G[bar])
         MirrorBorder:SetFrameLevel(_G[bar]:GetFrameLevel() + 2)
-		AddBorder(MirrorBorder, Settings.Media.BorderSize)
+		AddBorder(MirrorBorder, Settings.Media.BorderSize, Settings.Media.BorderPadding)
 		
 		_G[bar..'Border']:Hide()
 		
@@ -914,7 +919,6 @@ local Stylish = function(self, unit, isSingle)
 	
 	-- Various oUF plugins support
 	if (unit == 'player') then
-		
 		-- oUF_RuneBar support
 		if(IsAddOnLoaded('oUF_RuneBar') and class == 'DEATHKNIGHT') then
 			self.RuneBar = {}
@@ -958,7 +962,7 @@ local Stylish = function(self, unit, isSingle)
         self.DruidBorder:SetAllPoints(self.Druid.Power)
         self.DruidBorder:SetFrameLevel(self.Druid.Power:GetFrameLevel() + 2)
         
-        AddBorder(self.DruidBorder, Settings.Media.BorderSize)
+        AddBorder(self.DruidBorder, Settings.Media.BorderSize, Settings.Media.BorderPadding)
         
         table.insert(self.__elements, UpdateDruidPower)
         self:RegisterEvent('UNIT_MANA', UpdateDruidPower)
@@ -980,7 +984,7 @@ local Stylish = function(self, unit, isSingle)
         EclipseBarBorder:SetAllPoints(EclipseBar)
         EclipseBarBorder:SetFrameLevel(EclipseBar:GetFrameLevel() + 2)
       
-        AddBorder(EclipseBarBorder, Settings.Media.BorderSize)
+        AddBorder(EclipseBarBorder, Settings.Media.BorderSize, Settings.Media.BorderPadding)
 
         local LunarBar = CreateFrame('StatusBar', nil, EclipseBar)
         LunarBar:SetPoint('LEFT', EclipseBar, 'LEFT', 0, 0)
@@ -1056,7 +1060,7 @@ local Stylish = function(self, unit, isSingle)
     end
 	
     -- Hardcore border action!
-    AddBorder(self, Settings.Media.BorderSize)
+    AddBorder(self, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
     self:SetBorderParent(self.Overlay)
     
     self.UpdateBorder = UpdateBorder
@@ -1215,7 +1219,7 @@ local function StylishGroup(self, unit)
 	self.SpellRange = true
     
     -- Hardcore border action!
-    AddBorder(self, Settings.Media.BorderSize)
+    AddBorder(self, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
     self:SetBorderParent(self.Overlay)
     
     self.UpdateBorder = UpdateBorder
@@ -1350,7 +1354,7 @@ local function StylishRaid(self, unit)
 	self.SpellRange = true
 	
     -- Hardcore border action!
-    AddBorder(self, Settings.Media.BorderSize)
+    AddBorder(self, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
     self:SetBorderParent(self.Overlay)
     
     self.UpdateBorder = UpdateBorder

@@ -63,26 +63,56 @@ oUF.Tags['LanName'] = function(unit)
     end
 
     colorA = {1, 1, 1}
-
-	r, g, b = colorA[1], colorA[2], colorA[3]
-	    
-    return format('|cff%02x%02x%02x%s|r', r*255, g*255, b*255, UnitName)
+    
+    if (not UnitIsConnected(unit)) then
+        Name = '|cffD7BEA5'..'OFFLINE'
+        return Name
+    elseif (UnitIsDead(unit)) then
+        Name = '|cffD7BEA5'..'DEAD'
+        return Name
+    elseif (UnitIsGhost(unit)) then
+        Name = '|cffD7BEA5'..'GHOST'
+        return Name
+	else
+        r, g, b = colorA[1], colorA[2], colorA[3]
+        return format('|cff%02x%02x%02x%s|r', r*255, g*255, b*255, UnitName)
+    end
 end
 
 oUF.TagEvents['LanRaidName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
-oUF.Tags['LanRaidName'] = function(unit)
-    local Name = string.sub(UnitName(unit), 1, 4)
+oUF.Tags['LanRaidName'] = function(unit)    
+    if (not UnitIsConnected(unit)) then
+        Name = '|cffD7BEA5'..'OFFLINE'
+    elseif (UnitIsDead(unit)) then
+        Name = '|cffD7BEA5'..'DEAD'
+    elseif (UnitIsGhost(unit)) then
+        Name = '|cffD7BEA5'..'GHOST'
+	else
+        Name = string.sub(UnitName(unit), 1, 4)
+    end
+
 	return Name
 end
 
 oUF.TagEvents['LanShortName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
 oUF.Tags['LanShortName'] = function(unit)
     local name = UnitName(unit)
-    if strlen(name) > 8 then
-        local NewName = string.sub(UnitName(unit), 1, 8)..'...'
-        return NewName
-    else
-        return name
+    if (not UnitIsConnected(unit)) then
+        Name = '|cffD7BEA5'..'OFFLINE'
+        return Name
+    elseif (UnitIsDead(unit)) then
+        Name = '|cffD7BEA5'..'DEAD'
+        return Name
+    elseif (UnitIsGhost(unit)) then
+        Name = '|cffD7BEA5'..'GHOST'
+        return Name
+	else
+        if strlen(name) > 8 then
+            local NewName = string.sub(UnitName(unit), 1, 8)..'...'
+            return NewName
+        else
+            return name
+        end
     end
 end
 
