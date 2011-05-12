@@ -1,5 +1,5 @@
 --[[
-	Version = 1.18
+	Version = 1.19
 	
     Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
     
@@ -104,14 +104,17 @@ local function UpdateBorder(self)
 	local color
 	if Debuff and Dispellable then
 		color = colors.Debuff[Debuff]
+    elseif Debuff and Threat then
+        color = colors.Debuff[Debuff]
     elseif Threat and Threat > 1 then
         color = colors.threat[Threat]
 	elseif Debuff then
 		color = colors.Debuff[Debuff]
     elseif Threat and Threat > 0 then
         color = colors.threat[Threat]
-	end
-
+    end
+    
+    
 	if color then
 		self:SetBackdropBorderColor(color[1], color[2], color[3], 1)
 	else
@@ -381,13 +384,13 @@ local function UpdateDruidPower(self, event, unit)
         return 
     end
     
-	local UnitPower = PowerBarColor['MANA']
+	local unitPower = PowerBarColor['MANA']
     local mana = UnitPowerType('player') == 0
     local index = GetShapeshiftForm()
 
     if (index == 1 or index == 3) then
-        if (UnitPower) then
-            self.Druid.Power:SetStatusBarColor(UnitPower.r, UnitPower.g, UnitPower.b)
+        if (unitPower) then
+            self.Druid.Power:SetStatusBarColor(unitPower.r, unitPower.g, unitPower.b)
         end
         
         self.Druid.Power:SetAlpha(1)
@@ -854,7 +857,7 @@ local Stylish = function(self, unit, isSingle)
 		self.Buffs['growth-y'] = 'UP'
 		self.Buffs['initialAnchor'] = 'BOTTOMRIGHT'
 		self.Buffs['num'] = math.floor((Settings.Units.Player.Width - 4 + GAP) / (30 + GAP))
-		self.Buffs['size'] = 30
+		self.Buffs['size'] = Settings.Units.Player.Height
 		self.Buffs['spacing-x'] = GAP
 		self.Buffs['spacing-y'] = GAP
 
@@ -866,24 +869,31 @@ local Stylish = function(self, unit, isSingle)
 	elseif (unit == 'target') then
 		local GAP = 6
 
-		local MAX_ICONS = math.floor((Settings.Units.Target.Width - 4 + GAP) / (Settings.Units.Target.Height + GAP)) - 1
-		local NUM_BUFFS = math.max(2, math.floor(MAX_ICONS * 0.4))
-		local NUM_DEBUFFS = math.min(MAX_ICONS - 1, math.floor(MAX_ICONS * 0.8))
+        local MAX_ICONS = math.floor((Settings.Units.Target.Width + GAP) / (Settings.Units.Target.Height + GAP)) - 1
+        local NUM_BUFFS = math.max(1, math.floor(MAX_ICONS * 0.2))
+        local NUM_DEBUFFS = math.min(MAX_ICONS - 1, math.floor(MAX_ICONS * 0.8))
 
-		self.Debuffs = CreateFrame('Frame', nil, self)
+		if (isHealer) then
+            local debuff = NUM_DEBUFFS - 1
+            local buff = NUM_BUFFS + 1
+        else
+            local debuff = NUM_DEBUFFS - 1
+            local buff = NUM_BUFFS + 1
+        end
+        
+        self.Debuffs = CreateFrame('Frame', nil, self)
+        self.Debuffs:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 24)
+		self.Debuffs:SetWidth((Settings.Units.Target.Height * NUM_DEBUFFS - 1) + (GAP * (NUM_DEBUFFS - 1)))
+		self.Debuffs:SetHeight((Settings.Units.Target.Height * 2) + (GAP * 2))
 
 		self.Debuffs['growth-x'] = 'RIGHT'
 		self.Debuffs['growth-y'] = 'UP'
 		self.Debuffs['initialAnchor'] = 'BOTTOMLEFT'
-		self.Debuffs['num'] = NUM_DEBUFFS
+		self.Debuffs['num'] = debuffs
 		self.Debuffs['showType'] = false
-		self.Debuffs['size'] = 30
+		self.Debuffs['size'] = Settings.Units.Target.Height
 		self.Debuffs['spacing-x'] = GAP
 		self.Debuffs['spacing-y'] = GAP * 2
-
-		self.Debuffs:SetPoint('BOTTOMLEFT', self, 'TOPLEFT', 0, 10)
-		self.Debuffs:SetWidth((Settings.Units.Target.Height * NUM_DEBUFFS) + (GAP * (NUM_DEBUFFS - 1)))
-		self.Debuffs:SetHeight((Settings.Units.Target.Height * 2) + (GAP * 2))
 
 		self.Debuffs.CustomFilter   = CustomAuraFilter
 		self.Debuffs.PostCreateIcon = PostCreateAuraIcon
@@ -892,19 +902,20 @@ local Stylish = function(self, unit, isSingle)
 		self.Debuffs.parent = self
 
 		self.Buffs = CreateFrame('Frame', nil, self)
+        self.Buffs:SetPoint('BOTTOMRIGHT', self, 'TOPRIGHT', 2, 24)
+		self.Buffs:SetWidth((Settings.Units.Target.Height * NUM_BUFFS + 1) + (GAP * (NUM_BUFFS - 1)))
+		self.Buffs:SetHeight((Settings.Units.Target.Height * 2) + (GAP * 2))
 
 		self.Buffs['growth-x'] = 'LEFT'
 		self.Buffs['growth-y'] = 'UP'
 		self.Buffs['initialAnchor'] = 'BOTTOMRIGHT'
-		self.Buffs['num'] = NUM_BUFFS
+		self.Buffs['num'] = buffs
 		self.Buffs['showType'] = false
-		self.Buffs['size'] = 30
+		self.Buffs['size'] = Settings.Units.Target.Height
 		self.Buffs['spacing-x'] = GAP
 		self.Buffs['spacing-y'] = GAP * 2
 
-		self.Buffs:SetPoint('BOTTOMRIGHT', self, 'TOPRIGHT', 0, 10)
-		self.Buffs:SetWidth((Settings.Units.Target.Height * NUM_BUFFS) + (GAP * (NUM_BUFFS - 1)))
-		self.Buffs:SetHeight((Settings.Units.Target.Height * 2) + (GAP * 2))
+		
 
 		self.Buffs.CustomFilter   = CustomAuraFilter
 		self.Buffs.PostCreateIcon = PostCreateAuraIcon
@@ -915,12 +926,12 @@ local Stylish = function(self, unit, isSingle)
 	
 	-- DebuffHighlight Support
 	self.DebuffHighlightBackdrop = false
-	self.DebuffHighlightFilter = false
+	self.DebuffHighlightFilter = true
 	
 	-- Various oUF plugins support
 	if (unit == 'player') then
 		-- oUF_RuneBar support
-		if(IsAddOnLoaded('oUF_RuneBar') and class == 'DEATHKNIGHT') then
+		if (IsAddOnLoaded('oUF_RuneBar') and class == 'DEATHKNIGHT') then
 			self.RuneBar = {}
 			for i = 1, 6 do
 				self.RuneBar[i] = CreateFrame('StatusBar', '$parentRuneBar', self)
@@ -941,9 +952,10 @@ local Stylish = function(self, unit, isSingle)
 				self.RuneBar[i].bg:SetTexture(.1, .1, .1)			
 			end
 		end
+    end
 
     -- DruidPower Support
-    if (select(2, UnitClass('player')) == 'DRUID') then    
+    if (unit == 'player' and select(2, UnitClass('player')) == 'DRUID') then    
         self.Druid = CreateFrame('Frame')
         self.Druid:SetParent(self) 
         self.Druid:SetFrameStrata('LOW')
@@ -962,7 +974,7 @@ local Stylish = function(self, unit, isSingle)
         self.DruidBorder:SetAllPoints(self.Druid.Power)
         self.DruidBorder:SetFrameLevel(self.Druid.Power:GetFrameLevel() + 2)
         
-        AddBorder(self.DruidBorder, Settings.Media.BorderSize, Settings.Media.BorderPadding)
+        AddBorder(self.DruidBorder, Settings.Media.BorderSize, 5)
         
         table.insert(self.__elements, UpdateDruidPower)
         self:RegisterEvent('UNIT_MANA', UpdateDruidPower)
@@ -1033,9 +1045,18 @@ local Stylish = function(self, unit, isSingle)
         ComboPoints:SetFont(Settings.Media.Font, 24, 'OUTLINE')
         ComboPoints:SetJustifyH('CENTER')
         self:Tag(ComboPoints, '[LanCombo]')
-    end
+    
     end
 	
+    -- Raid Icons
+    if (unit == 'target') then
+        self.RaidIcon = self.Overlay:CreateTexture('$parentRaidIcon', 'ARTWORK')
+        self.RaidIcon:SetHeight(18)
+        self.RaidIcon:SetWidth(18)
+        self.RaidIcon:SetPoint('CENTER', self.Overlay, 'TOP')
+        self.RaidIcon:SetTexture('Interface\\TargettingFrame\\UI-RaidTargetingIcons')
+    end
+    
 	-- Custom sizes for our frames
     if (isSingle) then
         if (unit == 'player') then
@@ -1435,6 +1456,39 @@ oUF:Factory(function(self)
         end
     end
 end)
+
+-- Killin' those pesky raid frames
+for _, frame in pairs({
+	CompactPartyFrame,
+	CompactRaidFrameManager,
+	CompactRaidFrameContainer,
+}) do
+	frame:UnregisterAllEvents()
+    
+    hooksecurefunc(frame, 'Show', function(self)
+        self:Hide()
+    end)
+end
+
+for _, button in pairs({
+	'OptionsButton',
+
+    'LockedModeToggle',
+	'HiddenModeToggle',
+}) do
+    _G['CompactRaidFrameManagerDisplayFrame'..button]:Hide()
+    _G['CompactRaidFrameManagerDisplayFrame'..button]:Disable()
+    _G['CompactRaidFrameManagerDisplayFrame'..button]:EnableMouse(false)
+end
+
+for _, button in pairs({
+    'UnitFramePanelRaidStylePartyFrames',
+    'FrameCategoriesButton11',
+}) do
+    _G['InterfaceOptions'..button]:SetAlpha(0.35)
+    _G['InterfaceOptions'..button]:Disable()
+    _G['InterfaceOptions'..button]:EnableMouse(false)
+end
 
 -- Now all the solo stuff
 oUF:RegisterStyle('oUF_Lanerra', Stylish)
