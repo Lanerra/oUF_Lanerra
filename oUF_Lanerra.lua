@@ -1,5 +1,5 @@
 --[[
-	Version = 1.19
+	Version = 1.19.1
 	
     Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
     
