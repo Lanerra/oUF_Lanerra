@@ -436,7 +436,7 @@ local function PostCreateAuraIcon(iconframe, button)
 	if button.cd:IsShown() then
         AuraIconCD_OnShow(button.cd)
     end
-
+    
 	button.icon:SetTexCoord(0.03, 0.97, 0.03, 0.97)
 
 	button.overlay:Hide()
@@ -472,6 +472,7 @@ local function PostUpdateAuraIcon(iconframe, unit, button, index, offset)
 				child.text.SetFont = noop
 
 				child.text:SetTextColor(1, 0.8, 0)
+                child.text:SetShadowOffset(1, -1)
 				child.text.SetTextColor = noop
 				child.text.SetVertexColor = noop
 
@@ -1114,6 +1115,8 @@ local function StylishGroup(self, unit)
 		else
 			self:SetSize(Settings.Units.Party.Width, Settings.Units.Party.Height)
 		end
+    else
+        return
 	end
 	
 	-- Health bar display for group frames
@@ -1273,6 +1276,8 @@ local function StylishRaid(self, unit)
 		else
 			self:SetSize(Settings.Units.Raid.Width, Settings.Units.Raid.Height)
 		end
+    else
+        return
 	end
 	
 	-- Health bar display for group frames
@@ -1421,7 +1426,7 @@ oUF:Factory(function(self)
         if (Settings.Units.Raid.Healer) then
             local RaidShift, raid = false
             do
-                local UpdateRaid = CreateFrame'Frame'
+                local UpdateRaid = CreateFrame('Frame')
                 UpdateRaid:RegisterEvent('RAID_ROSTER_UPDATE')
                 UpdateRaid:SetScript('OnEvent', function(self)
                     if RaidShift == false then return end
