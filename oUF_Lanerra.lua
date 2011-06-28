@@ -1,6 +1,4 @@
 --[[
-	Version = 1.19.1
-	
     Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
     
 	Special thanks to P3lim for inspiration, Neav for textures and inspiration,

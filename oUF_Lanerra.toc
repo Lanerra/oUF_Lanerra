@@ -1,5 +1,5 @@
-## Interface: 40100
-## Version: 1.19.1
+## Interface: 40200
+## Version: 1.2
 
 ## Title: oUF_Lanerra
 ## Notes: oUF layout by Lanerra
