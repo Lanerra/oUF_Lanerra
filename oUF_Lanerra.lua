@@ -1486,15 +1486,6 @@ for _, button in pairs({
     _G['CompactRaidFrameManagerDisplayFrame'..button]:EnableMouse(false)
 end
 
-for _, button in pairs({
-    'UnitFramePanelRaidStylePartyFrames',
-    'FrameCategoriesButton11',
-}) do
-    _G['InterfaceOptions'..button]:SetAlpha(0.35)
-    _G['InterfaceOptions'..button]:Disable()
-    _G['InterfaceOptions'..button]:EnableMouse(false)
-end
-
 -- Now all the solo stuff
 oUF:RegisterStyle('oUF_Lanerra', Stylish)
 oUF:Factory(function(self)
