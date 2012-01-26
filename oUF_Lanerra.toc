@@ -1,5 +1,5 @@
 ## Interface: 40300
-## Version: 1.2.3
+## Version: 1.2.31
 
 ## Title: oUF_Lanerra
 ## Notes: oUF layout by Lanerra
