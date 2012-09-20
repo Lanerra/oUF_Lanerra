@@ -9,24 +9,24 @@
 
 -- Disable Blizzard options that are rendered useless by having a unit frame addon
 
-for _, button in pairs({
-    'UnitFramePanelPartyBackground',
-    'UnitFramePanelPartyPets',
-	'UnitFramePanelFullSizeFocusFrame',
+--~ for _, button in pairs({
+--~     'UnitFramePanelPartyBackground',
+--~     'UnitFramePanelPartyPets',
+--~ 	'UnitFramePanelFullSizeFocusFrame',
 
-    'CombatPanelTargetOfTarget',
-    'CombatPanelTOTDropDown',
-    'CombatPanelTOTDropDownButton',
-    'CombatPanelEnemyCastBarsOnPortrait',
+--~     'CombatPanelTargetOfTarget',
+--~     'CombatPanelTOTDropDown',
+--~     'CombatPanelTOTDropDownButton',
+--~     'CombatPanelEnemyCastBarsOnPortrait',
 
-    'DisplayPanelShowAggroPercentage',
+--~     'DisplayPanelShowAggroPercentage',
 
-    'FrameCategoriesButton9',
-}) do
-    _G['InterfaceOptions'..button]:SetAlpha(0.35)
-    _G['InterfaceOptions'..button]:Disable()
-    _G['InterfaceOptions'..button]:EnableMouse(false)
-end
+--~     'FrameCategoriesButton9',
+--~ }) do
+--~     _G['InterfaceOptions'..button]:SetAlpha(0.35)
+--~     _G['InterfaceOptions'..button]:Disable()
+--~     _G['InterfaceOptions'..button]:EnableMouse(false)
+--~ end
 
 do 
     for k, v in pairs(UnitPopupMenus) do
@@ -1581,7 +1581,7 @@ partyToggle:SetScript('OnEvent', function(self)
         If you want to switch to raid view later (meaning, if the members no longer fit into the party frame), you may change the following line accordingly.--]]
         
         if (Settings.Units.Raid.Healer) and (Settings.Units.Party.Healer) then
-	        if(GetNumRaidMembers() > 0) then
+	        if(GetNumGroupMembers() > 0) then
 	            _G['oUF_Lanerra_Group']:Hide()
 	            _G['oUF_Lanerra_Raid']:Show()
 	        else
@@ -1589,7 +1589,7 @@ partyToggle:SetScript('OnEvent', function(self)
 	            _G['oUF_Lanerra_Raid']:Hide()
 	        end
 	     else
-	        if(GetNumRaidMembers() > 0) then
+	        if(GetNumGroupMembers() > 0) then
 	            _G['oUF_Lanerra_Group']:Hide()
 	            _G['oUF_Lanerra_Raid1']:Show()
 	            _G['oUF_Lanerra_Raid2']:Show()

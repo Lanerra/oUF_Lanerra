@@ -133,7 +133,7 @@ oUF.UnitlessTagEvents['PLAYER_REGEN_ENABLED'] = true
 
 oUF.TagEvents['LanLeader'] = 'PARTY_LEADER_CHANGED PARTY_MEMBERS_CHANGED'
 oUF.Tags['LanLeader'] = function(unit)
-	if UnitIsPartyLeader(unit) then
+	if UnitIsGroupLeader(unit) then
 		return [[|TInterface\GroupFrame\UI-Group-LeaderIcon:0|t]]
 	elseif UnitInRaid(unit) and UnitIsRaidOfficer(unit) then
 		return [[|TInterface\GroupFrame\UI-Group-AssistantIcon:0|t]]
