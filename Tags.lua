@@ -1,18 +1,18 @@
 -- Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
 
 -- Define some custom oUF tags
-oUF.Tags['LanPvPTime'] = function(unit)
+oUF.Tags.Methods['LanPvPTime'] = function(unit)
 	return UnitIsPVP(unit) and not IsPVPTimerRunning() and '*' or IsPVPTimerRunning() and ('%d:%02d'):format((GetPVPTimer() / 1000) / 60, (GetPVPTimer() / 1000) % 60)
 end
 
-oUF.TagEvents['LanThreat'] = 'UNIT_THREAT_LIST_UPDATE'
-oUF.Tags['LanThreat'] = function()
+oUF.Tags.Events['LanThreat'] = 'UNIT_THREAT_LIST_UPDATE'
+oUF.Tags.Methods['LanThreat'] = function()
 	local _, _, perc = UnitDetailedThreatSituation('player', 'target')
 	return perc and ('%s%d%%|r'):format(hex(GetThreatStatusColor(UnitThreatSituation('player', 'target'))), perc)
 end
 
-oUF.TagEvents['LanClassification'] = 'UNIT_CLASSIFICATION_CHANGED'
-oUF.Tags['LanClassification'] = function(unit)
+oUF.Tags.Events['LanClassification'] = 'UNIT_CLASSIFICATION_CHANGED'
+oUF.Tags.Methods['LanClassification'] = function(unit)
     local level = UnitLevel(unit)
     local colorL = GetQuestDifficultyColor(level)
     
@@ -34,7 +34,7 @@ oUF.Tags['LanClassification'] = function(unit)
     end
 end
 
-oUF.Tags['LanLevel'] = function(unit)
+oUF.Tags.Methods['LanLevel'] = function(unit)
     local level = UnitLevel(unit)
     local colorL = GetQuestDifficultyColor(level)
         
@@ -52,8 +52,8 @@ oUF.Tags['LanLevel'] = function(unit)
     return format('|cff%02x%02x%02x%s|r', r*255, g*255, b*255, level)
 end
 
-oUF.TagEvents['LanName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
-oUF.Tags['LanName'] = function(unit)
+oUF.Tags.Events['LanName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
+oUF.Tags.Methods['LanName'] = function(unit)
     local colorA
     local UnitName, UnitRealm =  UnitName(unit)
     local _, class = UnitClass(unit)
@@ -79,8 +79,8 @@ oUF.Tags['LanName'] = function(unit)
     end
 end
 
-oUF.TagEvents['LanRaidName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
-oUF.Tags['LanRaidName'] = function(unit)    
+oUF.Tags.Events['LanRaidName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
+oUF.Tags.Methods['LanRaidName'] = function(unit)    
     if (not UnitIsConnected(unit)) then
         Name = '|cffD7BEA5'..'OFFLINE'
     elseif (UnitIsDead(unit)) then
@@ -94,8 +94,8 @@ oUF.Tags['LanRaidName'] = function(unit)
 	return Name
 end
 
-oUF.TagEvents['LanShortName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
-oUF.Tags['LanShortName'] = function(unit)
+oUF.Tags.Events['LanShortName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
+oUF.Tags.Methods['LanShortName'] = function(unit)
     local name = UnitName(unit)
     if (not UnitIsConnected(unit)) then
         Name = '|cffD7BEA5'..'OFFLINE'
@@ -116,23 +116,23 @@ oUF.Tags['LanShortName'] = function(unit)
     end
 end
 
-oUF.TagEvents['LanPower'] = 'UNIT_ENERGY UNIT_FOCUS UNIT_MANA UNIT_RAGE UNIT_MAXRUNIC_POWER UNIT_RUNIC_POWER'
-oUF.Tags['LanPower'] = function(unit)
+oUF.Tags.Events['LanPower'] = 'UNIT_ENERGY UNIT_FOCUS UNIT_MANA UNIT_RAGE UNIT_MAXRUNIC_POWER UNIT_RUNIC_POWER'
+oUF.Tags.Methods['LanPower'] = function(unit)
     local min = UnitPower(unit)
     return min
 end
 
-oUF.TagEvents['LanCombat'] = 'PLAYER_REGEN_DISABLED PLAYER_REGEN_ENABLED'
-oUF.Tags['LanCombat'] = function(unit)
+oUF.Tags.Events['LanCombat'] = 'PLAYER_REGEN_DISABLED PLAYER_REGEN_ENABLED'
+oUF.Tags.Methods['LanCombat'] = function(unit)
 	if unit == 'player' and UnitAffectingCombat('player') then
 		return [[|TInterface\CharacterFrame\UI-StateIcon:0:0:0:0:64:64:37:58:5:26|t]]
 	end
 end
-oUF.UnitlessTagEvents['PLAYER_REGEN_DISABLED'] = true
-oUF.UnitlessTagEvents['PLAYER_REGEN_ENABLED'] = true
+oUF.Tags.SharedEvents['PLAYER_REGEN_DISABLED'] = true
+oUF.Tags.SharedEvents['PLAYER_REGEN_ENABLED'] = true
 
-oUF.TagEvents['LanLeader'] = 'PARTY_LEADER_CHANGED PARTY_MEMBERS_CHANGED'
-oUF.Tags['LanLeader'] = function(unit)
+oUF.Tags.Events['LanLeader'] = 'PARTY_LEADER_CHANGED PARTY_MEMBERS_CHANGED'
+oUF.Tags.Methods['LanLeader'] = function(unit)
 	if UnitIsGroupLeader(unit) then
 		return [[|TInterface\GroupFrame\UI-Group-LeaderIcon:0|t]]
 	elseif UnitInRaid(unit) and UnitIsRaidOfficer(unit) then
@@ -140,8 +140,8 @@ oUF.Tags['LanLeader'] = function(unit)
 	end
 end
 
-oUF.TagEvents['LanMaster'] = 'PARTY_LOOT_METHOD_CHANGED PARTY_MEMBERS_CHANGED'
-oUF.Tags['LanMaster'] = function(unit)
+oUF.Tags.Events['LanMaster'] = 'PARTY_LOOT_METHOD_CHANGED PARTY_MEMBERS_CHANGED'
+oUF.Tags.Methods['LanMaster'] = function(unit)
 	local method, pid, rid = GetLootMethod()
 	if method ~= 'master' then return end
 	local munit
@@ -159,37 +159,37 @@ oUF.Tags['LanMaster'] = function(unit)
 	end
 end
 
-oUF.TagEvents['LanResting'] = 'PLAYER_UPDATE_RESTING'
-oUF.Tags['LanResting'] = function(unit)
+oUF.Tags.Events['LanResting'] = 'PLAYER_UPDATE_RESTING'
+oUF.Tags.Methods['LanResting'] = function(unit)
 	if unit == 'player' and IsResting() then
 		return [[|TInterface\CharacterFrame\UI-StateIcon:0:0:0:-6:64:64:28:6:6:28|t]]
 	end
 end
 
 
-oUF.Tags['LanHolyPower'] = function(unit)
+oUF.Tags.Methods['LanHolyPower'] = function(unit)
 	local hp = UnitPower('player', SPELL_POWER_HOLY_POWER)
 
 	if hp > 0 then
 		return string.format('|c50f58cba%d|r', hp)
 	end
 end
-oUF.TagEvents['LanHolyPower'] = 'UNIT_POWER'
+oUF.Tags.Events['LanHolyPower'] = 'UNIT_POWER'
 
-oUF.Tags['LanShards'] = function(unit)
+oUF.Tags.Methods['LanShards'] = function(unit)
 	local hp = UnitPower('player', SPELL_POWER_SOUL_SHARDS)
 
 	if hp > 0 then
 		return string.format('|c909482c9%d|r', hp)
 	end
 end
-oUF.TagEvents['LanShards'] = 'UNIT_POWER'
+oUF.Tags.Events['LanShards'] = 'UNIT_POWER'
 
-oUF.Tags['LanCombo'] = function(unit)
+oUF.Tags.Methods['LanCombo'] = function(unit)
     local cp = GetComboPoints('player', 'target')
     
     if cp > 0 then
         return string.format('|cffffff00%d|r', cp)
     end
 end
-oUF.TagEvents['LanCombo'] = 'UNIT_COMBO_POINTS'
+oUF.Tags.Events['LanCombo'] = 'UNIT_COMBO_POINTS'

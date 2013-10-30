@@ -7,27 +7,6 @@
 
 ---- Lazy Stuff Goes Here!
 
--- Disable Blizzard options that are rendered useless by having a unit frame addon
-
---~ for _, button in pairs({
---~     'UnitFramePanelPartyBackground',
---~     'UnitFramePanelPartyPets',
---~ 	'UnitFramePanelFullSizeFocusFrame',
-
---~     'CombatPanelTargetOfTarget',
---~     'CombatPanelTOTDropDown',
---~     'CombatPanelTOTDropDownButton',
---~     'CombatPanelEnemyCastBarsOnPortrait',
-
---~     'DisplayPanelShowAggroPercentage',
-
---~     'FrameCategoriesButton9',
---~ }) do
---~     _G['InterfaceOptions'..button]:SetAlpha(0.35)
---~     _G['InterfaceOptions'..button]:Disable()
---~     _G['InterfaceOptions'..button]:EnableMouse(false)
---~ end
-
 do 
     for k, v in pairs(UnitPopupMenus) do
         for x, i in pairs(UnitPopupMenus[k]) do
@@ -1500,9 +1479,9 @@ oUF:Factory(function(self)
                         self:RegisterEvent('PLAYER_REGEN_ENABLED')
                     else
                         self:UnregisterEvent('PLAYER_REGEN_ENABLED')
-                        if (GetNumRaidMembers() < 26 and GetNumRaidMembers() > 10) then
+                        if (GetNumGroupMembers() < 26 and GetNumGroupMembers() > 10) then
                             raid:SetPoint('CENTER', UIParent, -105, -200)
-                        elseif (GetNumRaidMembers() < 11) then
+                        elseif (GetNumGroupMembers() < 11) then
                             raid:SetPoint('CENTER', UIParent, -21, -200)
                         end
                     end
@@ -1580,7 +1559,7 @@ partyToggle:SetScript('OnEvent', function(self)
         your raid already has. This means, the party will be hidden if the party leader clicks the button to create a raid.
         If you want to switch to raid view later (meaning, if the members no longer fit into the party frame), you may change the following line accordingly.--]]
         
-        if (Settings.Units.Raid.Healer) and (Settings.Units.Party.Healer) then
+        if (Settings.Units.Raid.Healer) and (Settings.Units.Party.Healer) then            
 	        if(GetNumGroupMembers() > 0) then
 	            _G['oUF_Lanerra_Group']:Hide()
 	            _G['oUF_Lanerra_Raid']:Show()
@@ -1589,21 +1568,21 @@ partyToggle:SetScript('OnEvent', function(self)
 	            _G['oUF_Lanerra_Raid']:Hide()
 	        end
 	     else
-	        if(GetNumGroupMembers() > 0) then
-	            _G['oUF_Lanerra_Group']:Hide()
-	            _G['oUF_Lanerra_Raid1']:Show()
-	            _G['oUF_Lanerra_Raid2']:Show()
-	            _G['oUF_Lanerra_Raid3']:Show()
-	            _G['oUF_Lanerra_Raid4']:Show()
-	            _G['oUF_Lanerra_Raid5']:Show()
-	        else
-	            _G['oUF_Lanerra_Group']:Show()
-	            _G['oUF_Lanerra_Raid1']:Hide()
-	            _G['oUF_Lanerra_Raid2']:Hide()
-	            _G['oUF_Lanerra_Raid3']:Hide()
-	            _G['oUF_Lanerra_Raid4']:Hide()
-	            _G['oUF_Lanerra_Raid5']:Hide()
-	        end
+            if(GetNumGroupMembers() > 0) then
+                _G['oUF_Lanerra_Group']:Hide()
+                _G['oUF_Lanerra_Raid1']:Show()
+                _G['oUF_Lanerra_Raid2']:Show()
+                _G['oUF_Lanerra_Raid3']:Show()
+                _G['oUF_Lanerra_Raid4']:Show()
+                _G['oUF_Lanerra_Raid5']:Show()
+            else
+                _G['oUF_Lanerra_Group']:Show()
+                _G['oUF_Lanerra_Raid1']:Hide()
+                _G['oUF_Lanerra_Raid2']:Hide()
+                _G['oUF_Lanerra_Raid3']:Hide()
+                _G['oUF_Lanerra_Raid4']:Hide()
+                _G['oUF_Lanerra_Raid5']:Hide()
+            end
 	     end
     end
 end)
