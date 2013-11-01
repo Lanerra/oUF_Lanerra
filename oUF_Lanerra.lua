@@ -192,7 +192,7 @@ local function PostCastStart(Castbar, unit)
     if (unit == 'target') then
         if (self.Castbar.interrupt) then
             self.Castbar.Border:SetBorderTexture(Interrupt)
-            print('Changed the border, chief!')
+            --print('Changed the border, chief!')
             self.Castbar.Border:SetBorderColor(1, 0, 1)
             self.Castbar.Border:SetBorderShadowColor(1, 0, 1)
         else
