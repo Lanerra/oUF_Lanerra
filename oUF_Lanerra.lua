@@ -5,7 +5,30 @@
     Game92 for inspiration, and Phanx for inspiration and an inline border method
 --]]
 
----- Lazy Stuff Goes Here!
+-------------------------------------------------
+-- Kill some unneeded settings
+-------------------------------------------------
+
+InterfaceOptionsFrameCategoriesButton10:SetScale(0.00001)
+InterfaceOptionsFrameCategoriesButton10:SetAlpha(0)
+
+-------------------------------------------------
+-- Kill some unitframe stuff
+-------------------------------------------------
+
+for _, button in pairs({
+    'CombatPanelTargetOfTarget',
+    'CombatPanelEnemyCastBarsOnPortrait',
+    'DisplayPanelShowAggroPercentage',
+}) do
+    _G['InterfaceOptions'..button]:SetAlpha(0.35)
+    _G['InterfaceOptions'..button]:Disable()
+    _G['InterfaceOptions'..button]:EnableMouse(false)
+end
+
+-------------------------------------------------
+-- Lazy Stuff Goes Here!
+-------------------------------------------------
 
 do 
     for k, v in pairs(UnitPopupMenus) do
@@ -498,6 +521,8 @@ local Stylish = function(self, unit, isSingle)
     
 	self.ignoreHealComm = true
 	
+--    print("Spawn", self:GetName(), unit)
+
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
 	
@@ -1049,7 +1074,15 @@ local Stylish = function(self, unit, isSingle)
         ComboPoints:SetFont(Settings.Media.Font, 24, 'OUTLINE')
         ComboPoints:SetJustifyH('CENTER')
         self:Tag(ComboPoints, '[LanCombo]')
+    end
     
+    -- Chi display
+    if (select(2, UnitClass('player')) == 'MONK') then
+        local Chi = self:CreateFontString(nil, 'OVERLAY')
+        Chi:SetPoint('CENTER', self, 'RIGHT', 17, 0)
+        Chi:SetFont(Settings.Media.Font, 24, 'OUTLINE')
+        Chi:SetJustifyH('CENTER')
+        self:Tag(Chi, '[LanChi]')
     end
 	
     -- Raid Icons
@@ -1109,6 +1142,8 @@ local function StylishGroup(self, unit)
     
 	self.ignoreHealComm = true
 	
+--    print("Spawn", self:GetName(), unit)
+    
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
 	
@@ -1290,6 +1325,8 @@ local function StylishRaid(self, unit)
     
 	self.ignoreHealComm = true
 	
+--    print("Spawn", self:GetName(), unit)
+    
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
 	
@@ -1441,14 +1478,26 @@ local function StylishRaid(self, unit)
 end
 
 -- Now, actually bring it all together by actually spawning the frames
--- First spawn the group and raid stuff
-oUF:RegisterStyle('oUF_Lanerra_Group', StylishGroup)
-oUF:RegisterStyle('oUF_Lanerra_Raid', StylishRaid)
 
--- First up are the group frames
+-- First spawn the solo stuff
+oUF:RegisterStyle('oUF_Lanerra', Stylish)
 oUF:Factory(function(self)
+	self:SetActiveStyle('oUF_Lanerra')
+	self:Spawn('player', 'oUF_Lanerra_Player'):SetPoint(unpack(Settings.Units.Player.Position))
+	self:Spawn('target', 'oUF_Lanerra_Target'):SetPoint(unpack(Settings.Units.Target.Position))
+	self:Spawn('targettarget', 'oUF_Lanerra_ToT'):SetPoint(unpack(Settings.Units.ToT.Position))
+	self:Spawn('pet', 'oUF_Lanerra_Pet'):SetPoint(unpack(Settings.Units.Pet.Position))
+	self:Spawn('focus', 'oUF_Lanerra_Focus'):SetPoint(unpack(Settings.Units.Focus.Position))
+end)
+
+-- Next spawn the group stuff
+oUF:RegisterStyle('oUF_Lanerra_Group', StylishGroup)
+
+oUF:Factory(function(self)
+    self:SetActiveStyle('oUF_Lanerra_Group')
+    
 	if (Settings.Units.Party.Healer) then
-		local group = oUF:SpawnHeader('oUF_Lanerra_Group', nil, nil, 'showParty', true, 'showFocus', true, 'columnSpacing', 10, 'unitsPerColumn', 1, 'maxColumns', 5, 'columnAnchorPoint', 'LEFT', 'groupFilter', i)
+		local group = oUF:SpawnHeader('oUF_Lanerra_Group', nil, nil, 'showParty', true, 'showFocus', true, 'columnSpacing', 10, 'unitsPerColumn', 1, 'maxColumns', 5, 'columnAnchorPoint', 'LEFT')
 		group:SetPoint('CENTER', UIParent, 0, -240)
 	else
 		local group = oUF:SpawnHeader('oUF_Lanerra_Group', nil, nil, 'showParty', true, 'showPlayer', true, 'showFocus', true, 'yOffset', -10)
@@ -1460,7 +1509,9 @@ oUF:Factory(function(self)
 	end
 end)
 
--- Now for the raid frames
+-- And finally, the raid stuff
+oUF:RegisterStyle('oUF_Lanerra_Raid', StylishRaid)
+
 oUF:Factory(function(self)
     self:SetActiveStyle('oUF_Lanerra_Raid')
         
@@ -1530,59 +1581,3 @@ for _, button in pairs({
     _G['CompactRaidFrameManagerDisplayFrame'..button]:Disable()
     _G['CompactRaidFrameManagerDisplayFrame'..button]:EnableMouse(false)
 end
-
--- Now all the solo stuff
-oUF:RegisterStyle('oUF_Lanerra', Stylish)
-oUF:Factory(function(self)
-	self:SetActiveStyle('oUF_Lanerra')
-	self:Spawn('player', 'oUF_Lanerra_Player'):SetPoint(unpack(Settings.Units.Player.Position))
-	self:Spawn('target', 'oUF_Lanerra_Target'):SetPoint(unpack(Settings.Units.Target.Position))
-	self:Spawn('targettarget', 'oUF_Lanerra_ToT'):SetPoint(unpack(Settings.Units.ToT.Position))
-	self:Spawn('pet', 'oUF_Lanerra_Pet'):SetPoint(unpack(Settings.Units.Pet.Position))
-	self:Spawn('focus', 'oUF_Lanerra_Focus'):SetPoint(unpack(Settings.Units.Focus.Position))
-end)
-
--- Handling, whether the Raid- or the Party-frame is shown
--- FIX: Quick'n'dirty fix until the oUF-conditions work again
-local partyToggle = CreateFrame('Frame')        
-partyToggle:RegisterEvent('PLAYER_LOGIN')
-partyToggle:RegisterEvent('RAID_ROSTER_UPDATE')
-partyToggle:RegisterEvent('PARTY_LEADER_CHANGED')
-partyToggle:RegisterEvent('PARTY_MEMBERS_CHANGED')
-partyToggle:SetScript('OnEvent', function(self)
-    if(InCombatLockdown()) then
-        self:RegisterEvent('PLAYER_REGEN_ENABLED')
-    else
-        self:UnregisterEvent('PLAYER_REGEN_ENABLED')
-        
-        --[[ This results in the following behavior: If you're in a raid, the party frame will be hidden, no matter how many members
-        your raid already has. This means, the party will be hidden if the party leader clicks the button to create a raid.
-        If you want to switch to raid view later (meaning, if the members no longer fit into the party frame), you may change the following line accordingly.--]]
-        
-        if (Settings.Units.Raid.Healer) and (Settings.Units.Party.Healer) then            
-	        if(GetNumGroupMembers() > 0) then
-	            _G['oUF_Lanerra_Group']:Hide()
-	            _G['oUF_Lanerra_Raid']:Show()
-	        else
-	            _G['oUF_Lanerra_Group']:Show()
-	            _G['oUF_Lanerra_Raid']:Hide()
-	        end
-	     else
-            if(GetNumGroupMembers() > 0) then
-                _G['oUF_Lanerra_Group']:Hide()
-                _G['oUF_Lanerra_Raid1']:Show()
-                _G['oUF_Lanerra_Raid2']:Show()
-                _G['oUF_Lanerra_Raid3']:Show()
-                _G['oUF_Lanerra_Raid4']:Show()
-                _G['oUF_Lanerra_Raid5']:Show()
-            else
-                _G['oUF_Lanerra_Group']:Show()
-                _G['oUF_Lanerra_Raid1']:Hide()
-                _G['oUF_Lanerra_Raid2']:Hide()
-                _G['oUF_Lanerra_Raid3']:Hide()
-                _G['oUF_Lanerra_Raid4']:Hide()
-                _G['oUF_Lanerra_Raid5']:Hide()
-            end
-	     end
-    end
-end)
