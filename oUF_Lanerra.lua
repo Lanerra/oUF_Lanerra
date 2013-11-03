@@ -545,7 +545,9 @@ local Stylish = function(self, unit, isSingle)
 	self:SetBackdropColor(unpack(Settings.Media.BackdropColor))
 	
 	if (unit == 'player') then
-		local info = self.Health:CreateFontString('$parentInfo', 'OVERLAY', 'GameFontHighlightSmall')
+		--local info = self.Health:CreateFontString('$parentInfo', 'OVERLAY', 'GameFontHighlightSmall')
+		local info = self.Health:CreateFontString('$parentInfo', 'OVERLAY')
+        info:SetFont(Settings.Media.Font, Settings.Media.FontSize)
 		info:SetPoint('CENTER', self.Health)
 		info.frequentUpdates = .25
 		self:Tag(info, '[LanThreat] |cffff0000[LanPvPTime]|r')
