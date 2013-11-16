@@ -180,8 +180,8 @@ local function CreateDropDown(self)
     ToggleDropDownMenu(1, nil, dropdown, 'cursor', 15, -15)
 end
 
-local Interrupt = 'Interface\\Addons\\oUF_Lanerra\\Media\\BorderInterrupt'
-local Normal = 'Interface\\Addons\\oUF_Lanerra\\Media\\BorderNormal'
+local Interrupt = 'Interface\\Addons\\oUF_Lanerra\\media\\BorderInterrupt'
+local Normal = 'Interface\\Addons\\oUF_Lanerra\\media\\Border'
 
 local function PostCastStart(Castbar, unit)
     self.Castbar.SafeZone:SetDrawLayer('BORDER')
@@ -1318,6 +1318,8 @@ local function StylishGroup(self, unit)
     return self
 end
 
+oUF:RegisterStyle('oUF_Lanerra_Group', StylishGroup)
+
 -- Now the raid style
 local function StylishRaid(self, unit)
 	self.menu = CreateDropDown
@@ -1479,6 +1481,8 @@ local function StylishRaid(self, unit)
     return self
 end
 
+oUF:RegisterStyle('oUF_Lanerra_Raid', StylishRaid)
+
 -- Now, actually bring it all together by actually spawning the frames
 
 -- First spawn the solo stuff
@@ -1493,30 +1497,27 @@ oUF:Factory(function(self)
 end)
 
 -- Next spawn the group stuff
-oUF:RegisterStyle('oUF_Lanerra_Group', StylishGroup)
-
 oUF:Factory(function(self)
-    self:SetActiveStyle('oUF_Lanerra_Group')
-    
+	self:SetActiveStyle('oUF_Lanerra_Group')
+	
 	if (Settings.Units.Party.Healer) then
-		local group = oUF:SpawnHeader('oUF_Lanerra_Group', nil, nil, 'showParty', true, 'showFocus', true, 'columnSpacing', 10, 'unitsPerColumn', 1, 'maxColumns', 5, 'columnAnchorPoint', 'LEFT')
+		local group = oUF:SpawnHeader('oUF_Lanerra_Group', nil, 'party', 'showParty', true,'oUF-initialConfigFunction', [[
+			local header = self:GetParent()
+			self:SetWidth(header:GetAttribute("initial-width"))
+			self:SetHeight(header:GetAttribute("initial-height"))
+		]], 'initial-width', 100, 'initial-height', 35, 'columnSpacing', 10, 'unitsPerColumn', 1, 'maxColumns', 5, 'columnAnchorPoint', 'LEFT')
 		group:SetPoint('CENTER', UIParent, 0, -240)
 	else
-		local group = oUF:SpawnHeader('oUF_Lanerra_Group', nil, nil, 'showParty', true, 'showPlayer', true, 'showFocus', true, 'yOffset', -10)
-		if (IsAddOnLoaded('Skada')) then
-			group:SetPoint(unpack(Settings.Units.Party.TinyPosition))
-		else
-			group:SetPoint(unpack(Settings.Units.Party.Position))
-		end
+		local group = oUF:SpawnHeader('oUF_Lanerra_Group', nil, 'party', 'showParty', true, 'showPlayer', true, 'showFocus', true, 'yOffset', -10)
+		group:SetPoint(unpack(Settings.Units.Party.Position))
 	end
 end)
 
 -- And finally, the raid stuff
-oUF:RegisterStyle('oUF_Lanerra_Raid', StylishRaid)
 
 oUF:Factory(function(self)
-    self:SetActiveStyle('oUF_Lanerra_Raid')
-        
+	self:SetActiveStyle('oUF_Lanerra_Raid')
+	
     if (Settings.Units.Raid.Healer) then
         raid = oUF:SpawnHeader('oUF_Lanerra_Raid', nil, nil, 'showPlayer', true, 'showRaid', true, 'xOffset', 10, 'yOffset', -5, 'point', 'LEFT', 'groupFilter', '1,2,3,4,5', 'groupingOrder', '1,2,3,4,5', 'groupBy', 'GROUP', 'maxColumns', 10, 'unitsPerColumn', 5, 'columnSpacing', 10, 'columnAnchorPoint', 'TOP')
         raid:SetPoint('CENTER', UIParent, 0, -310)
@@ -1547,11 +1548,7 @@ oUF:Factory(function(self)
             raid[i] = oUF:SpawnHeader('oUF_Lanerra_Raid'..i, nil, nil, 'groupFilter', i, 'showRaid', true, 'showParty', true, 'showFocus', true, 'yOffset', -10)
             table.insert(raid, raid[i])
             if (i == 1) then
-                if (IsAddOnLoaded('TinyDPS')) then
-                    raid[i]:SetPoint(unpack(Settings.Units.Raid.TinyPosition))
-                else
-                    raid[i]:SetPoint(unpack(Settings.Units.Raid.Position))
-                end
+                raid[i]:SetPoint(unpack(Settings.Units.Raid.Position))
             else
                 raid[i]:SetPoint('TOP', raid[i-1], 'BOTTOM', 0, -10)
             end
@@ -1560,26 +1557,7 @@ oUF:Factory(function(self)
     end
 end)
 
--- Killin' those pesky raid frames
-for _, frame in pairs({
-	CompactPartyFrame,
-	CompactRaidFrameManager,
-	CompactRaidFrameContainer,
-}) do
-	frame:UnregisterAllEvents()
-    
-    hooksecurefunc(frame, 'Show', function(self)
-        self:Hide()
-    end)
-end
-
-for _, button in pairs({
-	'OptionsButton',
-
-    'LockedModeToggle',
-	'HiddenModeToggle',
-}) do
-    _G['CompactRaidFrameManagerDisplayFrame'..button]:Hide()
-    _G['CompactRaidFrameManagerDisplayFrame'..button]:Disable()
-    _G['CompactRaidFrameManagerDisplayFrame'..button]:EnableMouse(false)
-end
+CompactRaidFrameManager:UnregisterAllEvents()
+CompactRaidFrameManager:Hide()
+CompactRaidFrameContainer:UnregisterAllEvents()
+CompactRaidFrameContainer:Hide()
