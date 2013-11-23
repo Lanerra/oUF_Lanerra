@@ -9,8 +9,9 @@
 -- Kill some unneeded settings
 -------------------------------------------------
 
-InterfaceOptionsFrameCategoriesButton10:SetScale(0.00001)
-InterfaceOptionsFrameCategoriesButton10:SetAlpha(0)
+InterfaceOptionsFrameCategoriesButton11:SetScale(0.00001)
+InterfaceOptionsFrameCategoriesButton11:SetAlpha(0)
+
 
 -------------------------------------------------
 -- Kill some unitframe stuff
@@ -516,12 +517,12 @@ end
 local Stylish = function(self, unit, isSingle)
 	self.menu = CreateDropDown
     
-    self:SetScript("OnEnter", UnitFrame_OnEnter)
-    self:SetScript("OnLeave", UnitFrame_OnLeave)
+    self:SetScript('OnEnter', UnitFrame_OnEnter)
+    self:SetScript('OnLeave', UnitFrame_OnLeave)
     
 	self.ignoreHealComm = true
 	
---    print("Spawn", self:GetName(), unit)
+--    print('Spawn', self:GetName(), unit)
 
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
@@ -913,7 +914,7 @@ local Stylish = function(self, unit, isSingle)
         end
         
         self.Debuffs = CreateFrame('Frame', nil, self)
-        self.Debuffs:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 24)
+        self.Debuffs:SetPoint('BOTTOMLEFT', self, 'TOPLEFT', 0, 24)
 		self.Debuffs:SetWidth((Settings.Units.Target.Height * NUM_DEBUFFS - 1) + (GAP * (NUM_DEBUFFS - 1)))
 		self.Debuffs:SetHeight((Settings.Units.Target.Height * 2) + (GAP * 2))
 
@@ -1139,12 +1140,12 @@ end
 local function StylishGroup(self, unit)
 	self.menu = CreateDropDown
     
-    self:SetScript("OnEnter", UnitFrame_OnEnter)
-    self:SetScript("OnLeave", UnitFrame_OnLeave)
+    self:SetScript('OnEnter', UnitFrame_OnEnter)
+    self:SetScript('OnLeave', UnitFrame_OnLeave)
     
 	self.ignoreHealComm = true
 	
---    print("Spawn", self:GetName(), unit)
+--    print('Spawn', self:GetName(), unit)
     
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
@@ -1324,12 +1325,12 @@ oUF:RegisterStyle('oUF_Lanerra_Group', StylishGroup)
 local function StylishRaid(self, unit)
 	self.menu = CreateDropDown
     
-    self:SetScript("OnEnter", UnitFrame_OnEnter)
-    self:SetScript("OnLeave", UnitFrame_OnLeave)
+    self:SetScript('OnEnter', UnitFrame_OnEnter)
+    self:SetScript('OnLeave', UnitFrame_OnLeave)
     
 	self.ignoreHealComm = true
 	
---    print("Spawn", self:GetName(), unit)
+--    print('Spawn', self:GetName(), unit)
     
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
@@ -1501,25 +1502,68 @@ oUF:Factory(function(self)
 	self:SetActiveStyle('oUF_Lanerra_Group')
 	
 	if (Settings.Units.Party.Healer) then
-		local group = oUF:SpawnHeader('oUF_Lanerra_Group', nil, 'party', 'showParty', true,'oUF-initialConfigFunction', [[
-			local header = self:GetParent()
-			self:SetWidth(header:GetAttribute("initial-width"))
-			self:SetHeight(header:GetAttribute("initial-height"))
-		]], 'initial-width', 100, 'initial-height', 35, 'columnSpacing', 10, 'unitsPerColumn', 1, 'maxColumns', 5, 'columnAnchorPoint', 'LEFT')
+		local group = oUF:SpawnHeader(
+			'oUF_Lanerra_Group',
+			nil,
+			'party',
+			'showParty', true,
+			'columnSpacing', 10,
+			'unitsPerColumn', 1,
+			'maxColumns', 5,
+			'columnAnchorPoint', 'LEFT'
+		)
 		group:SetPoint('CENTER', UIParent, 0, -240)
 	else
-		local group = oUF:SpawnHeader('oUF_Lanerra_Group', nil, 'party', 'showParty', true, 'showPlayer', true, 'showFocus', true, 'yOffset', -10)
+		local group = oUF:SpawnHeader(
+			'oUF_Lanerra_Group',
+			nil,
+			'party',
+			'showParty', true,
+			'showPlayer', true,
+			'yOffset', -10
+		)
 		group:SetPoint(unpack(Settings.Units.Party.Position))
 	end
 end)
 
 -- And finally, the raid stuff
+local frameHider = CreateFrame('Frame')
+frameHider:Hide()
 
 oUF:Factory(function(self)
 	self:SetActiveStyle('oUF_Lanerra_Raid')
+
+	CompactUnitFrameProfiles:UnregisterAllEvents()	
+	CompactRaidFrameManager:SetParent(frameHider)
+	CompactRaidFrameManager:UnregisterAllEvents()
+	CompactRaidFrameContainer:SetParent(frameHider)
+	CompactRaidFrameContainer:UnregisterAllEvents()
 	
     if (Settings.Units.Raid.Healer) then
-        raid = oUF:SpawnHeader('oUF_Lanerra_Raid', nil, nil, 'showPlayer', true, 'showRaid', true, 'xOffset', 10, 'yOffset', -5, 'point', 'LEFT', 'groupFilter', '1,2,3,4,5', 'groupingOrder', '1,2,3,4,5', 'groupBy', 'GROUP', 'maxColumns', 10, 'unitsPerColumn', 5, 'columnSpacing', 10, 'columnAnchorPoint', 'TOP')
+        raid = oUF:SpawnHeader(
+			'oUF_Lanerra_Raid',
+			nil,
+			'raid',
+			'showPlayer', true,
+			'showRaid', true,
+			--'showSolo', true,
+			'xOffset', 10,
+			'yOffset', -5,
+			'point', 'LEFT',
+			'groupFilter', '1,2,3,4,5',
+			'groupingOrder', '1,2,3,4,5',
+			'groupBy', 'GROUP',
+			'maxColumns', 10,
+			'unitsPerColumn', 5,
+			'columnSpacing', 10,
+			'columnAnchorPoint', 'TOP',
+			'oUF-initialConfigFunction', [[
+				self:SetAttribute('initial-width', 75)
+				self:SetAttribute('initial-height', 35)
+				self:SetWidth(75)
+				self:SetHeight(35)
+			]]
+		)
         raid:SetPoint('CENTER', UIParent, 0, -310)
 
         if (Settings.Units.Raid.Healer) then
@@ -1545,7 +1589,22 @@ oUF:Factory(function(self)
     else
         raid = {}
         for i = 1, 5 do
-            raid[i] = oUF:SpawnHeader('oUF_Lanerra_Raid'..i, nil, nil, 'groupFilter', i, 'showRaid', true, 'showParty', true, 'showFocus', true, 'yOffset', -10)
+            raid[i] = oUF:SpawnHeader(
+				'oUF_Lanerra_Raid'..i,
+				nil,
+				'raid',
+				'groupFilter', '1,2,3,4,5',
+				'showRaid', true,
+				'showPlayer', true,
+				--'showSolo', true,
+				'yOffset', -10,
+				'oUF-initialConfigFunction', [[
+					self:SetAttribute('initial-width', 100)
+					self:SetAttribute('initial-height', 18)
+					self:SetWidth(100)
+					self:SetHeight(18)
+				]]
+			)
             table.insert(raid, raid[i])
             if (i == 1) then
                 raid[i]:SetPoint(unpack(Settings.Units.Raid.Position))
@@ -1556,8 +1615,3 @@ oUF:Factory(function(self)
         end
     end
 end)
-
-CompactRaidFrameManager:UnregisterAllEvents()
-CompactRaidFrameManager:Hide()
-CompactRaidFrameContainer:UnregisterAllEvents()
-CompactRaidFrameContainer:Hide()
