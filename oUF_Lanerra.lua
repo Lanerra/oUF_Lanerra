@@ -5,6 +5,8 @@
     Game92 for inspiration, and Phanx for inspiration and an inline border method
 --]]
 
+objects = {}
+
 -------------------------------------------------
 -- Kill some unneeded settings
 -------------------------------------------------
@@ -533,6 +535,7 @@ local Stylish = function(self, unit, isSingle)
 	self.ignoreHealComm = true
 	
 --    print('Spawn', self:GetName(), unit)
+	tinsert(objects, self)
 
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
@@ -1159,6 +1162,7 @@ local function StylishGroup(self, unit)
 	self.ignoreHealComm = true
 	
 --    print('Spawn', self:GetName(), unit)
+	tinsert(objects, self)
     
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
@@ -1348,6 +1352,7 @@ local function StylishRaid(self, unit)
 	self.ignoreHealComm = true
 	
 --    print('Spawn', self:GetName(), unit)
+	tinsert(objects, self)
     
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
@@ -1812,7 +1817,7 @@ if getRole then
 		if role ~= CURRENT_ROLE then
 			--print(event, CURRENT_ROLE, "->", role)
 			CURRENT_ROLE = role
-			F.UpdateAuraList()
+			UpdateAuraList()
 			for _, frame in pairs(objects) do
 				if frame.updateOnRoleChange then
 					for _, func in pairs(frame.updateOnRoleChange) do
