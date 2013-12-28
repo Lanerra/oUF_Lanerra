@@ -12,7 +12,6 @@
 InterfaceOptionsFrameCategoriesButton11:SetScale(0.00001)
 InterfaceOptionsFrameCategoriesButton11:SetAlpha(0)
 
-
 -------------------------------------------------
 -- Kill some unitframe stuff
 -------------------------------------------------
@@ -51,9 +50,18 @@ local colors = oUF.colors
 local playerClass = select(2, UnitClass('player'))
 local isHealer = (playerClass == 'DRUID' or playerClass == 'PALADIN' or playerClass == 'PRIEST' or playerClass == 'SHAMAN')
 
+local Loader = CreateFrame("Frame")
+Loader:RegisterEvent("ADDON_LOADED")
+Loader:SetScript("OnEvent", function(self, event, addon)
+	if addon ~= "oUF_Lanerra" then return end
+
+	oUFLanAura = oUFLanAura or {}
+	UpdateAuraList()
+end)
+
 -- A little backdrop local to save us some typing...because I'm lazy
 local backdrop = {
-	bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
+	bgFile = [[Interface\BUTTONS\WHITE8X8]],
 	insets = {top = -1, left = -1, bottom = -1, right = -1},
 }
 
@@ -74,17 +82,17 @@ PowerBarColor['ENERGY'] = { r = 1, g = 1, b = 35/255 }
 PowerBarColor['RUNIC_POWER'] = { r = 0.45, g = 0.85, b = 1 }
 
 -- Threat color handling
-oUF.colors.threat = { }
+oUF.colors.threat = {}
 for i = 1, 3 do
 	local r, g, b = GetThreatStatusColor(i)
 	oUF.colors.threat[i] = { r, g, b }
 end
 
 -- Debuff color handling
-colors.Debuff = { }
+colors.debuff = {}
 for type, color in pairs(DebuffTypeColor) do
 	if (type ~= 'none') then
-		colors.Debuff[type] = { color.r, color.g, color.b }
+		colors.debuff[type] = { color.r, color.g, color.b }
 	end
 end
 
@@ -100,22 +108,21 @@ end
 
 -- Border update function
 local function UpdateBorder(self)
-	local Threat, Debuff, Dispellable = self.threatLevel, self.debuffType, self.debuffDispellable
+	local threat, debuff, dispellable = self.threatLevel, self.debuffType, self.debuffDispellable
 
-	local color
-	if Debuff and Dispellable then
-		color = colors.Debuff[Debuff]
-    elseif Debuff and Threat then
-        color = colors.Debuff[Debuff]
-    elseif Threat and Threat > 1 then
-        color = colors.threat[Threat]
-	elseif Debuff then
-		color = colors.Debuff[Debuff]
-    elseif Threat and Threat > 0 then
-        color = colors.threat[Threat]
-    end
-    
-    
+	local color, glow
+	if debuff and dispellable then
+		color = colors.debuff[debuff]
+		glow = true
+	elseif threat and threat > 1 then
+		color = colors.threat[threat]
+		glow = true
+	elseif debuff then
+		color = colors.debuff[debuff]
+	elseif threat and threat > 0 then
+		color = colors.threat[threat]
+	end
+
 	if color then
 		self:SetBackdropBorderColor(color[1], color[2], color[3], 1)
 	else
@@ -192,10 +199,8 @@ local function PostCastStart(Castbar, unit)
     
     if (unit == 'target') then
         if (self.Castbar.interrupt) then
-            self.Castbar.Border:SetBorderTexture(Interrupt)
-            --print('Changed the border, chief!')
-            self.Castbar.Border:SetBorderColor(1, 0, 1)
-            self.Castbar.Border:SetBorderShadowColor(1, 0, 1)
+            self.Castbar.Border:SetBeautyBorderTexture(Interrupt)
+            self.Castbar.Border:SetBeautyBorderColor(1, 0, 1)
         else
             self.Castbar.Border:SetBorderTexture(Normal)
             self.Castbar.Border:SetBorderColor(1, 1, 1)
@@ -409,27 +414,32 @@ end
 -- Aura Icon Show
 local AuraIconCD_OnShow = function(cd)
 	local button = cd:GetParent()
-	button:SetBorderParent(cd)
 	button.count:SetParent(cd)
 end
 
 -- Aura Icon Hide
 local AuraIconCD_OnHide = function(cd)
 	local button = cd:GetParent()
-	button:SetBorderParent(button)
 	button.count:SetParent(button)
 end
+
 -- Aura Icon Overlay
 local AuraIconOverlay_SetBorderColor = function(overlay, r, g, b)
 	if not r or not g or not b then
 		r, g, b = unpack(Settings.Media.BorderColor)
 	end
-	overlay:GetParent():SetBorderColor(r, g, b)
+	
+	local over = overlay:GetParent()
+	
+	over.border:SetBorderColor(r, g, b)
 end
 
 -- Aura Icon Creation Function
 local function PostCreateAuraIcon(iconframe, button)
-	AddBorder(button, Settings.Media.BorderSize, Settings.Media.BorderPadding)
+	local border = CreateFrame('Frame', nil, button)
+	border:SetAllPoints(button)
+	AddBorder(border, Settings.Media.BorderSize, 2)
+	button.border = border
 
 	button.cd:SetReverse(true)
 	button.cd:SetScript('OnHide', AuraIconCD_OnHide)
@@ -810,16 +820,16 @@ local Stylish = function(self, unit, isSingle)
             MHPB:SetOrientation('HORIZONTAL')
             MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
             MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            MHPB:SetWidth(200)
-            MHPB:SetHeight(22)
+            MHPB:SetWidth(self.Health:GetWidth())
+            MHPB:SetHeight(self.Health:GetHeight())
             MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
 
             local OHPB = CreateFrame('StatusBar', nil, self.Health)
             OHPB:SetOrientation('HORIZONTAL')
             OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
             OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            OHPB:SetWidth(200)
-            OHPB:SetHeight(22)
+            OHPB:SetWidth(self.Health:GetWidth())
+            OHPB:SetHeight(self.Health:GetHeight())
             OHPB:SetStatusBarColor(0, 1, 0, 0.25)
 
             self.HealPrediction = {
@@ -835,16 +845,16 @@ local Stylish = function(self, unit, isSingle)
                 MHPB:SetOrientation('HORIZONTAL')
                 MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
                 MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-                MHPB:SetWidth(200)
-                MHPB:SetHeight(22)
+                MHPB:SetWidth(self.Health:GetWidth())
+                MHPB:SetHeight(self.Health:GetHeight())
                 MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
 
                 local OHPB = CreateFrame('StatusBar', nil, self.Health)
                 OHPB:SetOrientation('HORIZONTAL')
                 OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
                 OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-                OHPB:SetWidth(200)
-                OHPB:SetHeight(22)
+                OHPB:SetWidth(self.Health:GetWidth())
+                OHPB:SetHeight(self.Health:GetHeight())
                 OHPB:SetStatusBarColor(0, 1, 0, 0.25)
 
                 self.HealPrediction = {
@@ -862,6 +872,7 @@ local Stylish = function(self, unit, isSingle)
         self.Status:SetParent(self.Overlay)
         self.Status:SetFont(Settings.Media.Font, Settings.Media.FontSize)
 		self.Status:SetPoint('LEFT', self.Health, 'TOPLEFT', 2, 2)
+		self.Status:SetDrawLayer('OVERLAY', 7)
 
 		self:Tag(self.Status, '[LanLeader][LanMaster]')
         
@@ -869,16 +880,18 @@ local Stylish = function(self, unit, isSingle)
         self.Resting:SetParent(self.Overlay)
 		self.Resting:SetPoint('CENTER', self.Health, 'BOTTOMLEFT', 0, -4)
 		self.Resting:SetSize(20, 20)
+		self.Resting:SetDrawLayer('OVERLAY', 7)
 
 		self.Combat = self.Health:CreateTexture(nil, 'OVERLAY')
         self.Combat:SetParent(self.Overlay)
 		self.Combat:SetPoint('CENTER', self.Health, 'BOTTOMRIGHT', 0, -4)
 		self.Combat:SetSize(24, 24)
+		self.Combat:SetDrawLayer('OVERLAY', 7)
     end
     
     -- Aura/buff/debuff handling, update those suckers!
     if (unit == 'player' and Settings.Units.Player.ShowBuffs) then
-		local GAP = 6
+		local GAP = 4
 
 		self.Buffs = CreateFrame('Frame', nil, self)
 		self.Buffs:SetPoint('BOTTOMLEFT', self, 'TOPLEFT', 0, 10)
@@ -889,17 +902,17 @@ local Stylish = function(self, unit, isSingle)
 		self.Buffs['growth-y'] = 'UP'
 		self.Buffs['initialAnchor'] = 'BOTTOMRIGHT'
 		self.Buffs['num'] = math.floor((Settings.Units.Player.Width - 4 + GAP) / (30 + GAP))
-		self.Buffs['size'] = Settings.Units.Player.Height
+		self.Buffs['size'] = Settings.Units.Player.Height - 6
 		self.Buffs['spacing-x'] = GAP
 		self.Buffs['spacing-y'] = GAP
 
-		self.Buffs.CustomFilter   = CustomAuraFilter
+		self.Buffs.CustomFilter   = CustomAuraFilters.player
 		self.Buffs.PostCreateIcon = PostCreateAuraIcon
 		self.Buffs.PostUpdateIcon = PostUpdateAuraIcon
 
 		self.Buffs.parent = self
 	elseif (unit == 'target') then
-		local GAP = 6
+		local GAP = 4
 
         local MAX_ICONS = math.floor((Settings.Units.Target.Width + GAP) / (Settings.Units.Target.Height + GAP)) - 1
         local NUM_BUFFS = math.max(1, math.floor(MAX_ICONS * 0.2))
@@ -914,7 +927,7 @@ local Stylish = function(self, unit, isSingle)
         end
         
         self.Debuffs = CreateFrame('Frame', nil, self)
-        self.Debuffs:SetPoint('BOTTOMLEFT', self, 'TOPLEFT', 0, 24)
+        self.Debuffs:SetPoint('BOTTOMLEFT', self, 'TOPLEFT', -2, 16)
 		self.Debuffs:SetWidth((Settings.Units.Target.Height * NUM_DEBUFFS - 1) + (GAP * (NUM_DEBUFFS - 1)))
 		self.Debuffs:SetHeight((Settings.Units.Target.Height * 2) + (GAP * 2))
 
@@ -923,18 +936,18 @@ local Stylish = function(self, unit, isSingle)
 		self.Debuffs['initialAnchor'] = 'BOTTOMLEFT'
 		self.Debuffs['num'] = debuffs
 		self.Debuffs['showType'] = false
-		self.Debuffs['size'] = Settings.Units.Target.Height
+		self.Debuffs['size'] = Settings.Units.Target.Height - 6
 		self.Debuffs['spacing-x'] = GAP
 		self.Debuffs['spacing-y'] = GAP * 2
 
-		self.Debuffs.CustomFilter   = CustomAuraFilter
+		self.Debuffs.CustomFilter   = CustomAuraFilters.target
 		self.Debuffs.PostCreateIcon = PostCreateAuraIcon
 		self.Debuffs.PostUpdateIcon = PostUpdateAuraIcon
 
 		self.Debuffs.parent = self
 
 		self.Buffs = CreateFrame('Frame', nil, self)
-        self.Buffs:SetPoint('BOTTOMRIGHT', self, 'TOPRIGHT', 2, 24)
+        self.Buffs:SetPoint('BOTTOMRIGHT', self, 'TOPRIGHT', 2, 16)
 		self.Buffs:SetWidth((Settings.Units.Target.Height * NUM_BUFFS + 1) + (GAP * (NUM_BUFFS - 1)))
 		self.Buffs:SetHeight((Settings.Units.Target.Height * 2) + (GAP * 2))
 
@@ -949,7 +962,7 @@ local Stylish = function(self, unit, isSingle)
 
 		
 
-		self.Buffs.CustomFilter   = CustomAuraFilter
+		self.Buffs.CustomFilter   = CustomAuraFilters.target
 		self.Buffs.PostCreateIcon = PostCreateAuraIcon
 		self.Buffs.PostUpdateIcon = PostUpdateAuraIcon
 
@@ -997,8 +1010,8 @@ local Stylish = function(self, unit, isSingle)
         self.Druid.Power:SetStatusBarTexture(Settings.Media.StatusBar)
         self.Druid.Power:SetFrameStrata('LOW')
         self.Druid.Power:SetFrameLevel(self.Druid:GetFrameLevel() - 1)
-        self.Druid.Power:SetHeight(10)
-        self.Druid.Power:SetWidth(200)
+        self.Druid.Power:SetHeight(self.Power:GetHeight())
+        self.Druid.Power:SetWidth(self.Power:GetWidth())
         self.Druid.Power:SetBackdrop(backdrop)
         self.Druid.Power:SetBackdropColor(0, 0, 0, 0.5)
         
@@ -1020,7 +1033,7 @@ local Stylish = function(self, unit, isSingle)
         local EclipseBar = CreateFrame('Frame', nil, self)
         EclipseBar:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -10)
         EclipseBar:SetPoint('TOPRIGHT', self, 'BOTTOMRIGHT', 0, -10)
-        EclipseBar:SetSize(200, 10)
+        EclipseBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
         EclipseBar:SetBackdrop(backdrop)
         EclipseBar:SetBackdropColor(0, 0, 0, 0.6)
         
@@ -1032,14 +1045,14 @@ local Stylish = function(self, unit, isSingle)
 
         local LunarBar = CreateFrame('StatusBar', nil, EclipseBar)
         LunarBar:SetPoint('LEFT', EclipseBar, 'LEFT', 0, 0)
-        LunarBar:SetSize(200, 10)
+        LunarBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
         LunarBar:SetStatusBarTexture(Settings.Media.StatusBar)
         LunarBar:SetStatusBarColor(1, 1, 1)
         EclipseBar.LunarBar = LunarBar
 
         local SolarBar = CreateFrame('StatusBar', nil, EclipseBar)
         SolarBar:SetPoint('LEFT', LunarBar:GetStatusBarTexture(), 'RIGHT', 0, 0)
-        SolarBar:SetSize(200, 10)
+        SolarBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
         SolarBar:SetStatusBarTexture(Settings.Media.StatusBar)
         SolarBar:SetStatusBarColor(1, 3/5, 0)
         EclipseBar.SolarBar = SolarBar
@@ -1094,7 +1107,7 @@ local Stylish = function(self, unit, isSingle)
         self.RaidIcon:SetHeight(18)
         self.RaidIcon:SetWidth(18)
         self.RaidIcon:SetPoint('CENTER', self.Overlay, 'TOP')
-        self.RaidIcon:SetTexture('Interface\\TargettingFrame\\UI-RaidTargetingIcons')
+		self.RaidIcon:SetDrawLayer('OVERLAY', 7)
     end
     
 	-- Custom sizes for our frames
@@ -1150,7 +1163,7 @@ local function StylishGroup(self, unit)
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
 	
-	if (Settings.Show.Party) then
+	if Settings.Show.Party and not InCombatLockdown() then
 		if (Settings.Units.Party.Healer) then
 			self:SetSize(100, 35)
 		else
@@ -1213,15 +1226,15 @@ local function StylishGroup(self, unit)
         local MHPB = CreateFrame('StatusBar', nil, self.Health)
 		MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
 		MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-		MHPB:SetWidth(100)
-		MHPB:SetHeight(35)
+		MHPB:SetWidth(self.Health:GetWidth())
+		MHPB:SetHeight(self.Health:GetHeight())
 		MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
 
 		local OHPB = CreateFrame('StatusBar', nil, self.Health)
 		OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
 		OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-		OHPB:SetWidth(100)
-		OHPB:SetHeight(35)
+		OHPB:SetWidth(self.Health:GetWidth())
+		OHPB:SetHeight(self.Health:GetHeight())
 		OHPB:SetStatusBarColor(0, 1, 0, 0.25)
 
 		self.HealPrediction = {
@@ -1234,15 +1247,15 @@ local function StylishGroup(self, unit)
             local MHPB = CreateFrame('StatusBar', nil, self.Health)
             MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
             MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            MHPB:SetWidth(100)
-            MHPB:SetHeight(35)
+            MHPB:SetWidth(self.Health:GetWidth())
+            MHPB:SetHeight(self.Health:GetHeight())
             MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
 
             local OHPB = CreateFrame('StatusBar', nil, self.Health)
             OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
             OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            OHPB:SetWidth(100)
-            OHPB:SetHeight(35)
+            OHPB:SetWidth(self.Health:GetWidth())
+            OHPB:SetHeight(self.Health:GetHeight())
             OHPB:SetStatusBarColor(0, 1, 0, 0.25)
 
             self.HealPrediction = {
@@ -1257,6 +1270,7 @@ local function StylishGroup(self, unit)
 		self.Status = self.Overlay:CreateFontString(nil, 'OVERLAY')
         self.Status:SetFont(Settings.Media.Font, Settings.Media.FontSize)
 		self.Status:SetPoint('RIGHT', self.Health, 'BOTTOMRIGHT', -2, 0)
+		self.Status:SetDrawLayer('OVERLAY', 7)
 
 		self:Tag(self.Status, '[LanMaster][LanLeader]')
 	end
@@ -1266,12 +1280,13 @@ local function StylishGroup(self, unit)
 	self.RaidIcon:SetHeight(18)
 	self.RaidIcon:SetWidth(18)
 	self.RaidIcon:SetPoint('CENTER', self.Overlay, 'TOP')
-	self.RaidIcon:SetTexture('Interface\\TargettingFrame\\UI-RaidTargetingIcons')
+	self.RaidIcon:SetDrawLayer('OVERLAY', 7)
 	
     -- LFD Role
     self.LFDRole = self.Overlay:CreateTexture(nil, 'OVERLAY')
     self.LFDRole:SetPoint('CENTER', self, 'RIGHT', 2, 0)
     self.LFDRole:SetSize(16, 16)
+	self.LFDRole:SetDrawLayer('OVERLAY', 7)
     
     -- Buffs
     local GAP = 6
@@ -1289,7 +1304,7 @@ local function StylishGroup(self, unit)
     self.Buffs['spacing-x'] = GAP
     self.Buffs['spacing-y'] = GAP
 
-    self.Buffs.CustomFilter   = CustomAuraFilter
+    self.Buffs.CustomFilter   = CustomAuraFilters.party
     self.Buffs.PostCreateIcon = PostCreateAuraIcon
     self.Buffs.PostUpdateIcon = PostUpdateAuraIcon
 
@@ -1324,6 +1339,8 @@ oUF:RegisterStyle('oUF_Lanerra_Group', StylishGroup)
 -- Now the raid style
 local function StylishRaid(self, unit)
 	self.menu = CreateDropDown
+	local HealW = 75
+	local HealH = 30
     
     self:SetScript('OnEnter', UnitFrame_OnEnter)
     self:SetScript('OnLeave', UnitFrame_OnLeave)
@@ -1335,9 +1352,9 @@ local function StylishRaid(self, unit)
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
 	
-	if (Settings.Show.Raid) then
+	if Settings.Show.Raid and not InCombatLockdown() then
 		if (Settings.Units.Raid.Healer) then
-			self:SetSize(75, 35)
+			self:SetSize(HealW, HealH)
 		else
 			self:SetSize(Settings.Units.Raid.Width, Settings.Units.Raid.Height)
 		end
@@ -1384,14 +1401,14 @@ local function StylishRaid(self, unit)
 	-- Display group names
     if (Settings.Units.Raid.Healer) then
 		self.Name = self.Health:CreateFontString('$parentName', 'OVERLAY')
-		self.Name:SetPoint('TOP', 0, -2)
+		self.Name:SetPoint('CENTER')
 		self.Name:SetFont(Settings.Media.Font, 13)
 		self.Name:SetShadowOffset(1, -1)
 		self.Name:SetJustifyH('CENTER')
 		self:Tag(self.Name, '|cffffffff[LanRaidName]|r')
 	else
 		self.Name = self.Health:CreateFontString('$parentName', 'OVERLAY')
-		self.Name:SetPoint('LEFT', self.Health, 5, 1)
+		self.Name:SetPoint('CENTER')
 		self.Name:SetFont(Settings.Media.Font, 13)
 		self.Name:SetShadowOffset(1, -1)
 		self:Tag(self.Name, '|cffffffff[LanName]|r')
@@ -1404,15 +1421,15 @@ local function StylishRaid(self, unit)
         local MHPB = CreateFrame('StatusBar', nil, self.Health)
 		MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
 		MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-		MHPB:SetWidth(75)
-		MHPB:SetHeight(35)
+		MHPB:SetWidth(HealW)
+		MHPB:SetHeight(HealH)
 		MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
 
 		local OHPB = CreateFrame('StatusBar', nil, self.Health)
 		OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
 		OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-		OHPB:SetWidth(75)
-		OHPB:SetHeight(35)
+		OHPB:SetWidth(HealW)
+		OHPB:SetHeight(HealH)
 		OHPB:SetStatusBarColor(0, 1, 0, 0.25)
 
 		self.HealPrediction = {
@@ -1425,15 +1442,15 @@ local function StylishRaid(self, unit)
             local MHPB = CreateFrame('StatusBar', nil, self.Health)
             MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
             MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            MHPB:SetWidth(75)
-            MHPB:SetHeight(35)
+            MHPB:SetWidth(HealW)
+            MHPB:SetHeight(HealH)
             MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
 
             local OHPB = CreateFrame('StatusBar', nil, self.Health)
             OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
             OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            OHPB:SetWidth(75)
-            OHPB:SetHeight(35)
+            OHPB:SetWidth(HealW)
+            OHPB:SetHeight(HealH)
             OHPB:SetStatusBarColor(0, 1, 0, 0.25)
 
             self.HealPrediction = {
@@ -1448,6 +1465,7 @@ local function StylishRaid(self, unit)
     self.Status = self.Overlay:CreateFontString(nil, 'OVERLAY')
     self.Status:SetFont(Settings.Media.Font, Settings.Media.FontSize)
     self.Status:SetPoint('RIGHT', self.Health, 'BOTTOMRIGHT', -2, 0)
+	self.Status:SetDrawLayer('OVERLAY', 7)
 
     self:Tag(self.Status, '[LanMaster][LanLeader]')
 	
@@ -1455,8 +1473,8 @@ local function StylishRaid(self, unit)
 	self.RaidIcon = self.Overlay:CreateTexture('$parentRaidIcon', 'ARTWORK')
 	self.RaidIcon:SetHeight(18)
 	self.RaidIcon:SetWidth(18)
-	self.RaidIcon:SetPoint('CENTER', self.Overlay, 'TOP')
-	self.RaidIcon:SetTexture('Interface\\TargettingFrame\\UI-RaidTargetingIcons')
+	self.RaidIcon:SetPoint('RIGHT', self.Name, 'LEFT', -2, 0)
+	self.RaidIcon:SetDrawLayer('OVERLAY', 7)
 	
     -- Range-finding support
 	self.Range = {
@@ -1559,12 +1577,12 @@ oUF:Factory(function(self)
 			'columnAnchorPoint', 'TOP',
 			'oUF-initialConfigFunction', [[
 				self:SetAttribute('initial-width', 75)
-				self:SetAttribute('initial-height', 35)
+				self:SetAttribute('initial-height', 30)
 				self:SetWidth(75)
-				self:SetHeight(35)
+				self:SetHeight(30)
 			]]
 		)
-        raid:SetPoint('CENTER', UIParent, 0, -310)
+        raid:SetPoint('CENTER', UIParent, 0, -300)
 
         if (Settings.Units.Raid.Healer) then
             local RaidShift, raid = false
@@ -1578,9 +1596,9 @@ oUF:Factory(function(self)
                     else
                         self:UnregisterEvent('PLAYER_REGEN_ENABLED')
                         if (GetNumGroupMembers() < 26 and GetNumGroupMembers() > 10) then
-                            raid:SetPoint('CENTER', UIParent, -105, -200)
+                            raid:SetPoint('CENTER', UIParent, -105, -300)
                         elseif (GetNumGroupMembers() < 11) then
-                            raid:SetPoint('CENTER', UIParent, -21, -200)
+                            raid:SetPoint('CENTER', UIParent, -21, -240)
                         end
                     end
                 end)
@@ -1599,10 +1617,10 @@ oUF:Factory(function(self)
 				--'showSolo', true,
 				'yOffset', -10,
 				'oUF-initialConfigFunction', [[
-					self:SetAttribute('initial-width', 100)
-					self:SetAttribute('initial-height', 18)
-					self:SetWidth(100)
-					self:SetHeight(18)
+					self:SetAttribute('initial-width', Settings.Units.Raid.Width)
+					self:SetAttribute('initial-height', Settings.Units.Raid.Height)
+					self:SetWidth(Settings.Units.Raid.Width)
+					self:SetHeight(Settings.Units.Raid.Height)
 				]]
 			)
             table.insert(raid, raid[i])
@@ -1615,3 +1633,208 @@ oUF:Factory(function(self)
         end
     end
 end)
+
+local HandleFrame = function(baseName)
+	local frame
+	if(type(baseName) == 'string') then
+		frame = _G[baseName]
+	else
+		frame = baseName
+	end
+
+	if(frame) then
+		frame:UnregisterAllEvents()
+		frame:Hide()
+
+		-- Keep frame hidden without causing taint
+		frame:SetParent(frameHider)
+
+		local health = frame.healthbar
+		if(health) then
+			health:UnregisterAllEvents()
+		end
+
+		local power = frame.manabar
+		if(power) then
+			power:UnregisterAllEvents()
+		end
+
+		local spell = frame.spellbar
+		if(spell) then
+			spell:UnregisterAllEvents()
+		end
+
+		local altpowerbar = frame.powerBarAlt
+		if(altpowerbar) then
+			altpowerbar:UnregisterAllEvents()
+		end
+	end
+end
+
+function oUF:DisableBlizzard(unit)
+	if(not unit) then return end
+
+	if(unit == 'player') then
+		HandleFrame(PlayerFrame)
+
+		-- For the damn vehicle support:
+		PlayerFrame:RegisterEvent('PLAYER_ENTERING_WORLD')
+		PlayerFrame:RegisterEvent('UNIT_ENTERING_VEHICLE')
+		PlayerFrame:RegisterEvent('UNIT_ENTERED_VEHICLE')
+		PlayerFrame:RegisterEvent('UNIT_EXITING_VEHICLE')
+		PlayerFrame:RegisterEvent('UNIT_EXITED_VEHICLE')
+
+		-- User placed frames don't animate
+		PlayerFrame:SetUserPlaced(true)
+		PlayerFrame:SetDontSavePosition(true)
+	elseif(unit == 'pet') then
+		HandleFrame(PetFrame)
+	elseif(unit == 'target') then
+		HandleFrame(TargetFrame)
+		HandleFrame(ComboFrame)
+	elseif(unit == 'focus') then
+		HandleFrame(FocusFrame)
+		HandleFrame(TargetofFocusFrame)
+	elseif(unit == 'targettarget') then
+		HandleFrame(TargetFrameToT)
+	elseif(unit:match'(boss)%d?$' == 'boss') then
+		local id = unit:match'boss(%d)'
+		if(id) then
+			HandleFrame('Boss' .. id .. 'TargetFrame')
+		else
+			for i=1, 4 do
+				HandleFrame(('Boss%dTargetFrame'):format(i))
+			end
+		end
+	elseif(unit:match'(party)%d?$' == 'party') then
+		local id = unit:match'party(%d)'
+		if(id) then
+			HandleFrame('PartyMemberFrame' .. id)
+		else
+			for i=1, 4 do
+				HandleFrame(('PartyMemberFrame%d'):format(i))
+			end
+		end
+	elseif(unit:match'(arena)%d?$' == 'arena') then
+		local id = unit:match'arena(%d)'
+		if(id) then
+			HandleFrame('ArenaEnemyFrame' .. id)
+		else
+			for i=1, 4 do
+				HandleFrame(('ArenaEnemyFrame%d'):format(i))
+			end
+		end
+
+		-- Blizzard_ArenaUI should not be loaded
+		Arena_LoadUI = function() end
+		SetCVar('showArenaEnemyFrames', '0', 'SHOW_ARENA_ENEMY_FRAMES_TEXT')
+	end
+end
+
+-- Role Checker
+
+local CURRENT_ROLE = "DAMAGER"
+local getRole, updateEvents
+
+function GetPlayerRole()
+	return CURRENT_ROLE
+end
+
+if playerClass == "DEATHKNIGHT" then
+	updateEvents = "UPDATE_SHAPESHIFT_FORM"
+	function getRole()
+		if GetSpecialization() == 1 then -- Blood 1, Frost 2, Unholy 3
+			return "TANK"
+		end
+	end
+elseif playerClass == "DRUID" then
+	updateEvents = "UPDATE_SHAPESHIFT_FORM"
+	function getRole()
+		local form = GetShapeshiftFormID() -- Aquatic 4, Bear 5, Cat 1, Flight 29, Moonkin 31, Swift Flight 27, Travel 3, Tree 2
+		if form == 5 then
+			return "TANK"
+		elseif GetSpecialization() == 4 then -- Balance 1, Feral 2, Guardian 3, Restoration 4
+			return "HEALER"
+		end
+	end
+elseif playerClass == "MONK" then
+	updateEvents = "UPDATE_SHAPESHIFT_FORM"
+	function getRole()
+		local form = GetShapeshiftFormID() -- Tiger 24, Ox 23, Serpent 20
+		if form == 23 then
+			return "TANK"
+		elseif form == 20 then
+			return "HEALER"
+		end
+	end
+elseif playerClass == "PALADIN" then
+	local RIGHTEOUS_FURY = GetSpellInfo(25780)
+	updateEvents = "PLAYER_REGEN_DISABLED"
+	function getRole()
+		if UnitAura("player", RIGHTEOUS_FURY, "HELPFUL") then
+			return "TANK"
+		elseif GetSpecialization() == 1 then -- Holy 1, Protection 2, Retribution 3
+			return "HEALER"
+		end
+	end
+elseif playerClass == "PRIEST" then
+	function getRole()
+		if GetSpecialization() ~= 3 then -- Discipline 1, Holy 2, Shadow 3
+			return "HEALER"
+		end
+	end
+elseif playerClass == "SHAMAN" then
+	function getRole()
+		if GetSpecialization() == 3 then -- Elemental 1, Enhancement 2, Restoration 3
+			return "HEALER"
+		end
+	end
+elseif playerClass == "WARRIOR" then
+	updateEvents = "UPDATE_SHAPESHIFT_FORM"
+	function getRole()
+		if GetSpecialization() == 3 and GetShapeshiftFormID() == 18 then -- Battle 17, Berserker 19, Defensive 18
+			return "TANK"
+		end
+	end
+end
+
+if getRole then
+	local eventFrame = CreateFrame("Frame")
+	eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	eventFrame:RegisterEvent("PLAYER_TALENT_UPDATE")
+	if updateEvents then
+		for event in gmatch(updateEvents, "%S+") do
+			eventFrame:RegisterEvent(event)
+		end
+	end
+	eventFrame:SetScript("OnEvent", function(_, event, ...)
+		local role = getRole() or "DAMAGER"
+		if role ~= CURRENT_ROLE then
+			--print(event, CURRENT_ROLE, "->", role)
+			CURRENT_ROLE = role
+			F.UpdateAuraList()
+			for _, frame in pairs(objects) do
+				if frame.updateOnRoleChange then
+					for _, func in pairs(frame.updateOnRoleChange) do
+						func(frame, role)
+					end
+				end
+			end
+		end
+	end)
+end
+
+function hideBossFrames()
+	for i = 1, 4 do
+		local frame = _G["Boss"..i.."TargetFrame"]
+		
+		if frame then
+			frame:UnregisterAllEvents()
+			frame:Hide()
+			frame.Show = function () end
+		end
+	end
+end
+
+-- Call the hide function
+hideBossFrames()

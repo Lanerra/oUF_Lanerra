@@ -82,7 +82,7 @@ end
 oUF.Tags.Events['LanRaidName'] = 'UNIT_NAME_UPDATE UNIT_HEALTH'
 oUF.Tags.Methods['LanRaidName'] = function(unit)    
     if (not UnitIsConnected(unit)) then
-        Name = '|cffD7BEA5'..'OFFLINE'
+        Name = '|cffD7BEA5'..'OFF'
     elseif (UnitIsDead(unit)) then
         Name = '|cffD7BEA5'..'DEAD'
     elseif (UnitIsGhost(unit)) then
