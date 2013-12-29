@@ -84,18 +84,10 @@ PowerBarColor['ENERGY'] = { r = 1, g = 1, b = 35/255 }
 PowerBarColor['RUNIC_POWER'] = { r = 0.45, g = 0.85, b = 1 }
 
 -- Threat color handling
-oUF.colors.threat = {}
+colors.threat = {}
 for i = 1, 3 do
 	local r, g, b = GetThreatStatusColor(i)
 	oUF.colors.threat[i] = { r, g, b }
-end
-
--- Debuff color handling
-colors.debuff = {}
-for type, color in pairs(DebuffTypeColor) do
-	if (type ~= 'none') then
-		colors.debuff[type] = { color.r, color.g, color.b }
-	end
 end
 
 -- Color conversion function
@@ -112,23 +104,21 @@ end
 local function UpdateBorder(self)
 	local threat, debuff, dispellable = self.threatLevel, self.debuffType, self.debuffDispellable
 
-	local color, glow
+	local color
 	if debuff and dispellable then
 		color = colors.debuff[debuff]
-		glow = true
 	elseif threat and threat > 1 then
 		color = colors.threat[threat]
-		glow = true
-	elseif debuff then
+	elseif debuff and not ns.config.dispelFilter then
 		color = colors.debuff[debuff]
 	elseif threat and threat > 0 then
 		color = colors.threat[threat]
 	end
 
 	if color then
-		self:SetBackdropBorderColor(color[1], color[2], color[3], 1)
+		SetBorderColor(self.Overlay, color[1], color[2], color[3])
 	else
-		self:SetBackdropBorderColor(0, 0, 0, 0)
+		SetBorderColor(self.Overlay, unpack(Settings.Media.BorderColor))
 	end
 end
 
@@ -433,7 +423,7 @@ local AuraIconOverlay_SetBorderColor = function(overlay, r, g, b)
 	
 	local over = overlay:GetParent()
 	
-	over.border:SetBorderColor(r, g, b)
+	SetBorderColor(over.border, r, g, b)
 end
 
 -- Aura Icon Creation Function
@@ -502,27 +492,29 @@ local function PostUpdateAuraIcon(iconframe, unit, button, index, offset)
 end
 
 -- Dispel highlighting function
-local function UpdateDispelHighlight(self, event, unit, debuffType, canDispel)
-	if (self.unit ~= unit) then
-        return
-    end
-    
-	if (self.debuffType == debuffType) then
-        return
-    end
+local function UpdateDispelHighlight(element, debuffType, canDispel)
+	local frame = element.__owner
 
-	self.debuffType = debuffType
-	self.debuffDispellable = canDispel
-    
-    self:UpdateBorder()
+	if frame.debuffType == debuffType then return end
+
+	frame.debuffType = debuffType
+	frame.debuffDispellable = canDispel
+
+	frame:UpdateBorder()
 end
 
 -- Threat highlighting function
-local function UpdateThreatHighlight(self, unit, status)
-	if self.threatLevel == status then return end
+local function UpdateThreatHighlight(element, status)
+	if not status then
+		status = 0
+	end
 
-	self.threatLevel = status
-	self:UpdateBorder()
+	local frame = element.__owner
+	if frame.threatLevel == status then return end
+
+	frame.threatLevel = status
+
+	frame:UpdateBorder()
 end
 
 -- Time to give our solo unit frames some style!
@@ -959,7 +951,7 @@ local Stylish = function(self, unit, isSingle)
 		self.Buffs['initialAnchor'] = 'BOTTOMRIGHT'
 		self.Buffs['num'] = buffs
 		self.Buffs['showType'] = false
-		self.Buffs['size'] = Settings.Units.Target.Height
+		self.Buffs['size'] = Settings.Units.Target.Height - 6
 		self.Buffs['spacing-x'] = GAP
 		self.Buffs['spacing-y'] = GAP * 2
 
@@ -971,10 +963,6 @@ local Stylish = function(self, unit, isSingle)
 
 		self.Buffs.parent = self
 	end
-	
-	-- DebuffHighlight Support
-	self.DebuffHighlightBackdrop = false
-	self.DebuffHighlightFilter = true
 	
 	-- Various oUF plugins support
 	if (unit == 'player') then
@@ -1137,17 +1125,21 @@ local Stylish = function(self, unit, isSingle)
     end
 	
     -- Hardcore border action!
-    AddBorder(self, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
-    self:SetBorderParent(self.Overlay)
+    AddBorder(self.Overlay, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
     
     self.UpdateBorder = UpdateBorder
 
     -- Dispel highlight support
-    self.DispelHighlight = UpdateDispelHighlight
+    self.DispelHighlight = {
+		Override = UpdateDispelHighlight,
+		filter = true,
+	}
     
     -- Threat highlight support
     self.threatLevel = 0
-	self.ThreatHighlight = UpdateThreatHighlight
+	self.ThreatHighlight = {
+		Override = UpdateThreatHighlight,
+	}
        
     return self
 end
@@ -1323,17 +1315,21 @@ local function StylishGroup(self, unit)
 	self.SpellRange = true
     
     -- Hardcore border action!
-    AddBorder(self, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
-    self:SetBorderParent(self.Overlay)
+    AddBorder(self.Overlay, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
     
     self.UpdateBorder = UpdateBorder
 
-    -- Dispel highlight support
-    self.DispelHighlight = UpdateDispelHighlight
+	-- Dispel highlight support
+    self.DispelHighlight = {
+		Override = UpdateDispelHighlight,
+		filter = true,
+	}
     
     -- Threat highlight support
     self.threatLevel = 0
-	self.ThreatHighlight = UpdateThreatHighlight
+	self.ThreatHighlight = {
+		Override = UpdateThreatHighlight,
+	}
     
     return self
 end
@@ -1490,17 +1486,21 @@ local function StylishRaid(self, unit)
 	self.SpellRange = true
 	
     -- Hardcore border action!
-    AddBorder(self, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
-    self:SetBorderParent(self.Overlay)
+    AddBorder(self.Overlay, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
     
     self.UpdateBorder = UpdateBorder
 
     -- Dispel highlight support
-    self.DispelHighlight = UpdateDispelHighlight
+    self.DispelHighlight = {
+		Override = UpdateDispelHighlight,
+		filter = true,
+	}
     
     -- Threat highlight support
     self.threatLevel = 0
-	self.ThreatHighlight = UpdateThreatHighlight
+	self.ThreatHighlight = {
+		Override = UpdateThreatHighlight,
+	}
     
     return self
 end
