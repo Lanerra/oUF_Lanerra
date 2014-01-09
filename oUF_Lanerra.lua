@@ -618,8 +618,6 @@ local Stylish = function(self, unit, isSingle)
     
     -- Improve border drawing
     self.Overlay = CreateFrame('Frame', nil, self)
-	self.Overlay:SetAllPoints(self)
-	self.Overlay:SetFrameLevel(self.Health:GetFrameLevel() + (self.Power and 3 or 2))
     
 	-- Now, to hammer out our castbars
 	if (Settings.Show.CastBars) then
@@ -965,29 +963,24 @@ local Stylish = function(self, unit, isSingle)
 	end
 	
 	-- Various oUF plugins support
-	if (unit == 'player') then
-		-- oUF_RuneBar support
-		if (IsAddOnLoaded('oUF_RuneBar') and class == 'DEATHKNIGHT') then
-			self.RuneBar = {}
-			for i = 1, 6 do
-				self.RuneBar[i] = CreateFrame('StatusBar', '$parentRuneBar', self)
-				if(i == 1) then
-					self.RuneBar[i]:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -1)
-				else
-					self.RuneBar[i]:SetPoint('TOPLEFT', self.RuneBar[i-1], 'TOPRIGHT', 1, 0)
-				end
-				self.RuneBar[i]:SetStatusBarTexture(Settings.Media.StatusBar)
-				self.RuneBar[i]:SetHeight(5)
-				self.RuneBar[i]:SetWidth(200/6 - .85)
-				self.RuneBar[i]:SetBackdrop(backdrop)
-				self.RuneBar[i]:SetBackdropColor(0, 0, 0, .5)
-				self.RuneBar[i]:SetMinMaxValues(0, 1)
-
-				self.RuneBar[i].bg = self.RuneBar[i]:CreateTexture('$parentRuneBackground', 'BORDER')
-				self.RuneBar[i].bg:SetAllPoints(self.RuneBar[i])
-				self.RuneBar[i].bg:SetTexture(.1, .1, .1)			
+	if (unit == 'player') and select(2, UnitClass('player')) == 'DEATHKNIGHT' then
+		local Runes = {}
+		for index = 1, 6 do
+			-- Position and size of the rune bar indicators
+			local Rune = CreateFrame('StatusBar', nil, self)
+			Rune:SetStatusBarTexture(Settings.Media.StatusBar)
+			Rune:SetSize(Settings.Units.Player.Width / 6 - 2, 6)
+			Runes[index] = Rune
+			
+			if index == 1 then
+				Runes[index]:SetPoint('BOTTOMLEFT', self, 'TOPLEFT', 1, 1)
+			else
+				Runes[index]:SetPoint('LEFT', Runes[index - 1], 'RIGHT', 2, 0)
 			end
 		end
+
+		-- Register with oUF
+		self.Runes = Runes
     end
 
     -- DruidPower Support
@@ -1125,6 +1118,13 @@ local Stylish = function(self, unit, isSingle)
     end
 	
     -- Hardcore border action!
+	if unit == 'player' and select(2, UnitClass('player')) == 'DEATHKNIGHT' then
+		self.Overlay:SetPoint('TOPLEFT', self.Runes[1])
+		self.Overlay:SetPoint('BOTTOMRIGHT', self)
+	else
+		self.Overlay:SetAllPoints(self)
+	end
+	self.Overlay:SetFrameLevel(self.Health:GetFrameLevel() + (self.Power and 3 or 2))
     AddBorder(self.Overlay, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
     
     self.UpdateBorder = UpdateBorder
