@@ -1,6 +1,6 @@
 --[[
     Border and Shadow generation, color-alteration, size-changing, and parenting
-    Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
+    Copyright © 2010-2014 Lanerra. See LICENSE file for license terms.
 ]]
 
 -- Create Border Function

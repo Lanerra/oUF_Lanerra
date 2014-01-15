@@ -1,4 +1,4 @@
--- Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
+-- Copyright © 2010-2014 Lanerra. See LICENSE file for license terms.
 
 -- Define some custom oUF tags
 oUF.Tags.Methods['LanPvPTime'] = function(unit)

@@ -1,5 +1,5 @@
 --[[
-    Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
+    Copyright © 2010-2014 Lanerra. See LICENSE file for license terms.
     
 	Special thanks to P3lim for inspiration, Neav for textures and inspiration,
     Game92 for inspiration, and Phanx for inspiration and an inline border method
@@ -402,6 +402,24 @@ local function UpdateDruidPower(self, event, unit)
     end
 end
 
+-- Runes, sucka!
+if playerClass == 'DEATHKNIGHT' then
+	-- Better unholy color:
+	oUF.colors.runes[2][1] = 0.3
+	oUF.colors.runes[2][2] = 0.9
+	oUF.colors.runes[2][3] = 0
+
+	-- Better frost color:
+	oUF.colors.runes[3][1] = 0
+	oUF.colors.runes[3][2] = 0.8
+	oUF.colors.runes[3][3] = 1
+
+	-- Better death color:
+	oUF.colors.runes[4][1] = 0.8
+	oUF.colors.runes[4][2] = 0.5
+	oUF.colors.runes[4][3] = 1
+end
+
 -- Aura Icons for our unit frames
 -- Aura Icon Show
 local AuraIconCD_OnShow = function(cd)
@@ -592,7 +610,7 @@ local Stylish = function(self, unit, isSingle)
     if (unit == 'target') then
         self.Power.Value:SetPoint('TOPRIGHT', self.Power, 'BOTTOMRIGHT', 0, -5)
     elseif (unit == 'player') then
-        self.Power.Value:SetPoint('LEFT', self.Health.Value, 'RIGHT', -195, 0)
+        self.Power.Value:SetPoint('TOPLEFT', self.Power, 'BOTTOMLEFT', 0, -5)
     end
 	
 	self.Power.Value:SetTextColor(1, 1, 1)
@@ -904,7 +922,7 @@ local Stylish = function(self, unit, isSingle)
 		self.Buffs.PostUpdateIcon = PostUpdateAuraIcon
 
 		self.Buffs.parent = self
-	elseif (unit == 'target') then
+	elseif (unit == 'target') and Settings.Units.Target.ShowBuffs then
 		local GAP = 4
 
         local MAX_ICONS = math.floor((Settings.Units.Target.Width + GAP) / (Settings.Units.Target.Height + GAP)) - 1
@@ -963,19 +981,21 @@ local Stylish = function(self, unit, isSingle)
 	end
 	
 	-- Various oUF plugins support
-	if (unit == 'player') and select(2, UnitClass('player')) == 'DEATHKNIGHT' then
+	if (unit == 'player') and playerClass == 'DEATHKNIGHT' then
 		local Runes = {}
 		for index = 1, 6 do
 			-- Position and size of the rune bar indicators
 			local Rune = CreateFrame('StatusBar', nil, self)
+			Rune:SetBackdrop({bgFile = [[Interface\BUTTONS\WHITE8X8]]})
+			Rune:SetBackdropColor(0, 0, 0, 0.5)
 			Rune:SetStatusBarTexture(Settings.Media.StatusBar)
-			Rune:SetSize(Settings.Units.Player.Width / 6 - 2, 6)
+			Rune:SetSize(Settings.Units.Player.Width / 6 - 1.35, 6)
 			Runes[index] = Rune
 			
 			if index == 1 then
-				Runes[index]:SetPoint('BOTTOMLEFT', self, 'TOPLEFT', 1, 1)
+				Runes[index]:SetPoint('BOTTOMLEFT', self, 'TOPLEFT', 2, 1)
 			else
-				Runes[index]:SetPoint('LEFT', Runes[index - 1], 'RIGHT', 2, 0)
+				Runes[index]:SetPoint('LEFT', Runes[index - 1], 'RIGHT', 1, 0)
 			end
 		end
 
@@ -984,7 +1004,7 @@ local Stylish = function(self, unit, isSingle)
     end
 
     -- DruidPower Support
-    if (unit == 'player' and select(2, UnitClass('player')) == 'DRUID') then    
+    if (unit == 'player' and playerClass == 'DRUID') then    
         self.Druid = CreateFrame('Frame')
         self.Druid:SetParent(self) 
         self.Druid:SetFrameStrata('LOW')
@@ -1013,13 +1033,13 @@ local Stylish = function(self, unit, isSingle)
     end
     
     -- Eclipse Bar Support
-    if (select(2, UnitClass('player')) == 'DRUID') then
+    if (playerClass == 'DRUID') then
         local EclipseBar = CreateFrame('Frame', nil, self)
         EclipseBar:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -10)
         EclipseBar:SetPoint('TOPRIGHT', self, 'BOTTOMRIGHT', 0, -10)
         EclipseBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
         EclipseBar:SetBackdrop(backdrop)
-        EclipseBar:SetBackdropColor(0, 0, 0, 0.6)
+        EclipseBar:SetBackdropColor(0, 0, 0, 0.5)
         
         local EclipseBarBorder = CreateFrame('Frame', nil, EclipseBar)
         EclipseBarBorder:SetAllPoints(EclipseBar)
@@ -1050,7 +1070,7 @@ local Stylish = function(self, unit, isSingle)
     end
     
     -- Soul Shard Support
-	if (select(2, UnitClass('player')) == 'WARLOCK') then
+	if (playerClass == 'WARLOCK') then
         local Shards = self:CreateFontString(nil, 'OVERLAY')
         Shards:SetPoint('CENTER', self, 'RIGHT', 17, -2)
         Shards:SetFont(Settings.Media.Font, 24, 'OUTLINE')
@@ -1059,7 +1079,7 @@ local Stylish = function(self, unit, isSingle)
     end
 
     -- Holy Power Support
-    if (select(2, UnitClass('player')) == 'PALADIN') then
+    if (playerClass == 'PALADIN') then
         local HolyPower = self:CreateFontString(nil, 'OVERLAY')
         HolyPower:SetPoint('CENTER', self, 'RIGHT', 17, -2)
         HolyPower:SetFont(Settings.Media.Font, 24, 'OUTLINE')
@@ -1068,7 +1088,7 @@ local Stylish = function(self, unit, isSingle)
     end
     
     -- Combo points display
-	if (select(2, UnitClass('player')) == 'ROGUE') or (select(2, UnitClass('player')) == 'DRUID') then
+	if (playerClass == 'ROGUE') or (select(2, UnitClass('player')) == 'DRUID') then
         local ComboPoints = self:CreateFontString(nil, 'OVERLAY')
         ComboPoints:SetPoint('CENTER', self, 'RIGHT', 17, -2)
         ComboPoints:SetFont(Settings.Media.Font, 24, 'OUTLINE')
@@ -1077,7 +1097,7 @@ local Stylish = function(self, unit, isSingle)
     end
     
     -- Chi display
-    if (select(2, UnitClass('player')) == 'MONK') then
+    if (playerClass == 'MONK') then
         local Chi = self:CreateFontString(nil, 'OVERLAY')
         Chi:SetPoint('CENTER', self, 'RIGHT', 17, 0)
         Chi:SetFont(Settings.Media.Font, 24, 'OUTLINE')
@@ -1119,7 +1139,7 @@ local Stylish = function(self, unit, isSingle)
 	
     -- Hardcore border action!
 	if unit == 'player' and select(2, UnitClass('player')) == 'DEATHKNIGHT' then
-		self.Overlay:SetPoint('TOPLEFT', self.Runes[1])
+		self.Overlay:SetPoint('TOPLEFT', self.Runes[1], 0, -1)
 		self.Overlay:SetPoint('BOTTOMRIGHT', self)
 	else
 		self.Overlay:SetAllPoints(self)

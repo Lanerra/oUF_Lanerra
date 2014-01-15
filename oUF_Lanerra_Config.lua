@@ -1,4 +1,4 @@
--- Copyright © 2010-2011 Lanerra. See LICENSE file for license terms.
+-- Copyright © 2010-2014 Lanerra. See LICENSE file for license terms.
 Settings = {
     Show = {
         CastBars = true,
@@ -15,7 +15,7 @@ Settings = {
         FontSize = 15,
         BorderSize = 12,
         BorderColor = { 0.65, 0.65, 0.65 },
-        BackdropColor = { 0, 0, 0, 0.75 },
+        BackdropColor = { 0, 0, 0, 0.5 },
         BorderPadding = 4
     },
     Units = {
@@ -52,6 +52,7 @@ Settings = {
                 PerCur = false,
             },
             ShowPowerText = true,
+            ShowBuffs = true,
         },
         ToT = {
             Height = 30,

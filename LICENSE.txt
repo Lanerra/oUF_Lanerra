@@ -1,4 +1,4 @@
-Copyright © 2010-2011 Lanerra.
+Copyright © 2010-2014 Lanerra.
 
 The contents of this addon, excluding third-party resources, are
 copyrighted to its author with all rights reserved, under United

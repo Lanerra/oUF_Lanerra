@@ -1,10 +1,10 @@
 ## Interface: 50400
-## Version: 1.5.2
+## Version: 1.5.3
 
 ## Title: oUF_Lanerra
 ## Notes: oUF layout by Lanerra
 ## Author: Lanerra
-## X-Copyright: Copyright © 2010 Lanerra.
+## X-Copyright: Copyright © 2014 Lanerra.
 ## X-License: See LICENSE file for license terms.
 ## RequiredDeps: oUF
 ## OptionalDeps: oUF_DebuffHighlight, oUF_RuneBar
@@ -14,8 +14,8 @@ modules\Smooth.lua
 modules\DispellableDebuffs.lua
 modules\Threat.lua
 
-oUF_Lanerra.lua
 oUF_Lanerra_Config.lua
+oUF_Lanerra.lua
 AuraFilter.lua
 Borders.lua
 Tags.lua
