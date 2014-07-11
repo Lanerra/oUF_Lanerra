@@ -5,7 +5,7 @@
     Game92 for inspiration, and Phanx for inspiration and an inline border method
 --]]
 
-objects = {}
+local objects = {}
 
 -------------------------------------------------
 -- Kill some unneeded settings
@@ -38,6 +38,10 @@ do
             if (i == 'SET_FOCUS' or i == 'CLEAR_FOCUS') then
                 table.remove(UnitPopupMenus[k],x)
             end
+			
+			if (i == 'PET_DISMISS') then
+				table.remove(UnitPopupMenus[k],x)
+			end
         end
     end
 end
@@ -52,10 +56,10 @@ local colors = oUF.colors
 local playerClass = select(2, UnitClass('player'))
 local isHealer = (playerClass == 'DRUID' or playerClass == 'PALADIN' or playerClass == 'PRIEST' or playerClass == 'SHAMAN')
 
-local Loader = CreateFrame("Frame")
-Loader:RegisterEvent("ADDON_LOADED")
-Loader:SetScript("OnEvent", function(self, event, addon)
-	if addon ~= "oUF_Lanerra" then return end
+local Loader = CreateFrame('Frame')
+Loader:RegisterEvent('ADDON_LOADED')
+Loader:SetScript('OnEvent', function(self, event, addon)
+	if addon ~= 'oUF_Lanerra' then return end
 
 	oUFLanAura = oUFLanAura or {}
 	UpdateAuraList()
@@ -72,7 +76,7 @@ local PlayerUnits = { player = true, pet = true, vehicle = true }
 -- Dummy function
 local noop = function() return end
 
-fontstrings = { }
+local fontstrings = {}
 
 -- Custom power colors
 local PowerBarColor = PowerBarColor
@@ -825,7 +829,7 @@ local Stylish = function(self, unit, isSingle)
         self.Health.Value:SetPoint('RIGHT', self.Health, -2, -1)
     end
     
-    if (Settings.Show.HealerOverride == true) then
+    if Settings.Show.HealerOverride or isHealer then
         if (unit == 'target') then
             local MHPB = CreateFrame('StatusBar', nil, self.Health)
             MHPB:SetOrientation('HORIZONTAL')
@@ -848,32 +852,6 @@ local Stylish = function(self, unit, isSingle)
                 otherBar = OHPB,
                 maxOverflow = 1,
             }
-        end
-    else
-        if (isHealer) then
-            if (unit == 'target') then
-                local MHPB = CreateFrame('StatusBar', nil, self.Health)
-                MHPB:SetOrientation('HORIZONTAL')
-                MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
-                MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-                MHPB:SetWidth(self.Health:GetWidth())
-                MHPB:SetHeight(self.Health:GetHeight())
-                MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
-
-                local OHPB = CreateFrame('StatusBar', nil, self.Health)
-                OHPB:SetOrientation('HORIZONTAL')
-                OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
-                OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-                OHPB:SetWidth(self.Health:GetWidth())
-                OHPB:SetHeight(self.Health:GetHeight())
-                OHPB:SetStatusBarColor(0, 1, 0, 0.25)
-
-                self.HealPrediction = {
-                    myBar = MHPB,
-                    otherBar = OHPB,
-                    maxOverflow = 1,
-                }
-            end
         end
     end
     
@@ -1238,7 +1216,7 @@ local function StylishGroup(self, unit)
 		self.Name:SetPoint('CENTER', self.Health)
 	end
     
-    if (Settings.Show.HealerOverride == true) then
+    if Settings.Show.HealerOverride or isHealer then
         local MHPB = CreateFrame('StatusBar', nil, self.Health)
 		MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
 		MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
@@ -1258,28 +1236,6 @@ local function StylishGroup(self, unit)
 			otherBar = OHPB,
 			maxOverflow = 1,
 		}
-    else
-        if (isHealer) then
-            local MHPB = CreateFrame('StatusBar', nil, self.Health)
-            MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
-            MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            MHPB:SetWidth(self.Health:GetWidth())
-            MHPB:SetHeight(self.Health:GetHeight())
-            MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
-
-            local OHPB = CreateFrame('StatusBar', nil, self.Health)
-            OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
-            OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            OHPB:SetWidth(self.Health:GetWidth())
-            OHPB:SetHeight(self.Health:GetHeight())
-            OHPB:SetStatusBarColor(0, 1, 0, 0.25)
-
-            self.HealPrediction = {
-                myBar = MHPB,
-                otherBar = OHPB,
-                maxOverflow = 1,
-            }
-        end
     end
 	
 	if unit == 'party' or unit == 'target' then
@@ -1305,26 +1261,50 @@ local function StylishGroup(self, unit)
 	self.LFDRole:SetDrawLayer('OVERLAY', 7)
     
     -- Buffs
-    local GAP = 6
+	if Settings.Units.Party.ShowBuffs then
+		local GAP = 4
+		
+		if not NUM_DEBUFFS then NUM_DEBUFFS = 1 end
+		
+		self.Debuffs = CreateFrame('Frame', nil, self)
+        self.Debuffs:SetPoint('BOTTOMLEFT', self, 'TOPLEFT', 0, 24)
+		self.Debuffs:SetWidth((self:GetHeight() * NUM_DEBUFFS - 1) + (GAP * (NUM_DEBUFFS - 1)))
+		self.Debuffs:SetHeight((self:GetHeight() * 2) + (GAP * 2))
 
-    self.Buffs = CreateFrame('Frame', nil, self)
-    self.Buffs:SetPoint('BOTTOMRIGHT', self, 'TOPRIGHT', 0, 10)
-    self.Buffs:SetHeight(Settings.Units.Party.Height)
-    self.Buffs:SetWidth((Settings.Units.Party.Height * 4) + (GAP * 3))
+		self.Debuffs['growth-x'] = 'RIGHT'
+		self.Debuffs['growth-y'] = 'UP'
+		self.Debuffs['initialAnchor'] = 'BOTTOMLEFT'
+		self.Debuffs['num'] = debuffs
+		self.Debuffs['showType'] = false
+		self.Debuffs['size'] = self:GetHeight()
+		self.Debuffs['spacing-x'] = GAP
+		self.Debuffs['spacing-y'] = GAP * 2
 
-    self.Buffs['growth-x'] = 'LEFT'
-    self.Buffs['growth-y'] = 'DOWN'
-    self.Buffs['initialAnchor'] = 'TOPRIGHT'
-    self.Buffs['num'] = 4
-    self.Buffs['size'] = Settings.Units.Party.Height
-    self.Buffs['spacing-x'] = GAP
-    self.Buffs['spacing-y'] = GAP
+		self.Debuffs.CustomFilter   = CustomAuraFilters.party
+		self.Debuffs.PostCreateIcon = PostCreateAuraIcon
+		self.Debuffs.PostUpdateIcon = PostUpdateAuraIcon
 
-    self.Buffs.CustomFilter   = CustomAuraFilters.party
-    self.Buffs.PostCreateIcon = PostCreateAuraIcon
-    self.Buffs.PostUpdateIcon = PostUpdateAuraIcon
+		self.Debuffs.parent = self
 
-    self.Buffs.parent = self
+		self.Buffs = CreateFrame('Frame', nil, self)
+		self.Buffs:SetPoint('BOTTOMRIGHT', self, 'TOPRIGHT', 0, 10)
+		self.Buffs:SetHeight(self:GetHeight())
+		self.Buffs:SetWidth((self:GetHeight() * 4) + (GAP * 3))
+
+		self.Buffs['growth-x'] = 'LEFT'
+		self.Buffs['growth-y'] = 'DOWN'
+		self.Buffs['initialAnchor'] = 'TOPRIGHT'
+		self.Buffs['num'] = 4
+		self.Buffs['size'] = self:GetHeight()
+		self.Buffs['spacing-x'] = GAP
+		self.Buffs['spacing-y'] = GAP
+
+		self.Buffs.CustomFilter   = CustomAuraFilters.party
+		self.Buffs.PostCreateIcon = PostCreateAuraIcon
+		self.Buffs.PostUpdateIcon = PostUpdateAuraIcon
+
+		self.Buffs.parent = self
+	end
     
 	-- Range-finding support
 	self.Range = {
@@ -1438,48 +1418,29 @@ local function StylishRaid(self, unit)
     
     self.Name.frequentUpdates = 0.3
     
-    if (Settings.Show.HealerOverride == true) then
+    if Settings.Show.HealerOverride or isHealer then
         local MHPB = CreateFrame('StatusBar', nil, self.Health)
-		MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
+		MHPB:SetPoint('TOP')
+		MHPB:SetPoint('BOTTOM')
+		MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT')
 		MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
 		MHPB:SetWidth(HealW)
-		MHPB:SetHeight(HealH)
 		MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
 
 		local OHPB = CreateFrame('StatusBar', nil, self.Health)
-		OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
+		OHPB:SetPoint('TOP')
+		OHPB:SetPoint('BOTTOM')
+		OHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT')
 		OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
 		OHPB:SetWidth(HealW)
-		OHPB:SetHeight(HealH)
 		OHPB:SetStatusBarColor(0, 1, 0, 0.25)
 
 		self.HealPrediction = {
 			myBar = MHPB,
 			otherBar = OHPB,
-			maxOverflow = 1,
+			maxOverflow = 1.05,
+			frequentUpdates = true,
 		}
-    else
-        if (isHealer) then
-            local MHPB = CreateFrame('StatusBar', nil, self.Health)
-            MHPB:SetPoint('LEFT', self.Health:GetStatusBarTexture(), 'RIGHT', 0, 0)
-            MHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            MHPB:SetWidth(HealW)
-            MHPB:SetHeight(HealH)
-            MHPB:SetStatusBarColor(0, 1, 0.5, 0.25)
-
-            local OHPB = CreateFrame('StatusBar', nil, self.Health)
-            OHPB:SetPoint('LEFT', MHPB:GetStatusBarTexture(), 'RIGHT', 0, 0)
-            OHPB:SetStatusBarTexture(Settings.Media.StatusBar)
-            OHPB:SetWidth(HealW)
-            OHPB:SetHeight(HealH)
-            OHPB:SetStatusBarColor(0, 1, 0, 0.25)
-
-            self.HealPrediction = {
-                myBar = MHPB,
-                otherBar = OHPB,
-                maxOverflow = 1,
-            }
-        end
     end
 	
 	-- Status Icons Display
@@ -1574,6 +1535,7 @@ local frameHider = CreateFrame('Frame')
 frameHider:Hide()
 
 oUF:Factory(function(self)
+	local raid
 	self:SetActiveStyle('oUF_Lanerra_Raid')
 
 	CompactUnitFrameProfiles:UnregisterAllEvents()	
@@ -1630,32 +1592,15 @@ oUF:Factory(function(self)
             end
         end
     else
-        raid = {}
-        for i = 1, 5 do
-            raid[i] = oUF:SpawnHeader(
-				'oUF_Lanerra_Raid'..i,
-				nil,
-				'raid',
-				'groupFilter', '1,2,3,4,5',
-				'showRaid', true,
-				'showPlayer', true,
-				--'showSolo', true,
-				'yOffset', -10,
-				'oUF-initialConfigFunction', [[
-					self:SetAttribute('initial-width', Settings.Units.Raid.Width)
-					self:SetAttribute('initial-height', Settings.Units.Raid.Height)
-					self:SetWidth(Settings.Units.Raid.Width)
-					self:SetHeight(Settings.Units.Raid.Height)
-				]]
-			)
-            table.insert(raid, raid[i])
-            if (i == 1) then
-                raid[i]:SetPoint(unpack(Settings.Units.Raid.Position))
-            else
-                raid[i]:SetPoint('TOP', raid[i-1], 'BOTTOM', 0, -10)
-            end
-            raid[i]:Show()
-        end
+        raid = oUF:SpawnHeader(
+			'oUF_Lanerra_Raid',
+			nil,
+			'raid',
+			'showRaid', true,
+			'showPlayer', true,
+			'yOffset', -10
+		)
+		raid:SetPoint(unpack(Settings.Units.Raid.Position))
     end
 end)
 
@@ -1758,84 +1703,84 @@ end
 
 -- Role Checker
 
-local CURRENT_ROLE = "DAMAGER"
+local CURRENT_ROLE = 'DAMAGER'
 local getRole, updateEvents
 
 function GetPlayerRole()
 	return CURRENT_ROLE
 end
 
-if playerClass == "DEATHKNIGHT" then
-	updateEvents = "UPDATE_SHAPESHIFT_FORM"
+if playerClass == 'DEATHKNIGHT' then
+	updateEvents = 'UPDATE_SHAPESHIFT_FORM'
 	function getRole()
 		if GetSpecialization() == 1 then -- Blood 1, Frost 2, Unholy 3
-			return "TANK"
+			return 'TANK'
 		end
 	end
-elseif playerClass == "DRUID" then
-	updateEvents = "UPDATE_SHAPESHIFT_FORM"
+elseif playerClass == 'DRUID' then
+	updateEvents = 'UPDATE_SHAPESHIFT_FORM'
 	function getRole()
 		local form = GetShapeshiftFormID() -- Aquatic 4, Bear 5, Cat 1, Flight 29, Moonkin 31, Swift Flight 27, Travel 3, Tree 2
 		if form == 5 then
-			return "TANK"
+			return 'TANK'
 		elseif GetSpecialization() == 4 then -- Balance 1, Feral 2, Guardian 3, Restoration 4
-			return "HEALER"
+			return 'HEALER'
 		end
 	end
-elseif playerClass == "MONK" then
-	updateEvents = "UPDATE_SHAPESHIFT_FORM"
+elseif playerClass == 'MONK' then
+	updateEvents = 'UPDATE_SHAPESHIFT_FORM'
 	function getRole()
 		local form = GetShapeshiftFormID() -- Tiger 24, Ox 23, Serpent 20
 		if form == 23 then
-			return "TANK"
+			return 'TANK'
 		elseif form == 20 then
-			return "HEALER"
+			return 'HEALER'
 		end
 	end
-elseif playerClass == "PALADIN" then
+elseif playerClass == 'PALADIN' then
 	local RIGHTEOUS_FURY = GetSpellInfo(25780)
-	updateEvents = "PLAYER_REGEN_DISABLED"
+	updateEvents = 'PLAYER_REGEN_DISABLED'
 	function getRole()
-		if UnitAura("player", RIGHTEOUS_FURY, "HELPFUL") then
-			return "TANK"
+		if UnitAura('player', RIGHTEOUS_FURY, 'HELPFUL') then
+			return 'TANK'
 		elseif GetSpecialization() == 1 then -- Holy 1, Protection 2, Retribution 3
-			return "HEALER"
+			return 'HEALER'
 		end
 	end
-elseif playerClass == "PRIEST" then
+elseif playerClass == 'PRIEST' then
 	function getRole()
 		if GetSpecialization() ~= 3 then -- Discipline 1, Holy 2, Shadow 3
-			return "HEALER"
+			return 'HEALER'
 		end
 	end
-elseif playerClass == "SHAMAN" then
+elseif playerClass == 'SHAMAN' then
 	function getRole()
 		if GetSpecialization() == 3 then -- Elemental 1, Enhancement 2, Restoration 3
-			return "HEALER"
+			return 'HEALER'
 		end
 	end
-elseif playerClass == "WARRIOR" then
-	updateEvents = "UPDATE_SHAPESHIFT_FORM"
+elseif playerClass == 'WARRIOR' then
+	updateEvents = 'UPDATE_SHAPESHIFT_FORM'
 	function getRole()
 		if GetSpecialization() == 3 and GetShapeshiftFormID() == 18 then -- Battle 17, Berserker 19, Defensive 18
-			return "TANK"
+			return 'TANK'
 		end
 	end
 end
 
 if getRole then
-	local eventFrame = CreateFrame("Frame")
-	eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	eventFrame:RegisterEvent("PLAYER_TALENT_UPDATE")
+	local eventFrame = CreateFrame('Frame')
+	eventFrame:RegisterEvent('PLAYER_ENTERING_WORLD')
+	eventFrame:RegisterEvent('PLAYER_TALENT_UPDATE')
 	if updateEvents then
-		for event in gmatch(updateEvents, "%S+") do
+		for event in gmatch(updateEvents, '%S+') do
 			eventFrame:RegisterEvent(event)
 		end
 	end
-	eventFrame:SetScript("OnEvent", function(_, event, ...)
-		local role = getRole() or "DAMAGER"
+	eventFrame:SetScript('OnEvent', function(_, event, ...)
+		local role = getRole() or 'DAMAGER'
 		if role ~= CURRENT_ROLE then
-			--print(event, CURRENT_ROLE, "->", role)
+			--print(event, CURRENT_ROLE, '->', role)
 			CURRENT_ROLE = role
 			UpdateAuraList()
 			for _, frame in pairs(objects) do
@@ -1851,7 +1796,7 @@ end
 
 function hideBossFrames()
 	for i = 1, 4 do
-		local frame = _G["Boss"..i.."TargetFrame"]
+		local frame = _G['Boss'..i..'TargetFrame']
 		
 		if frame then
 			frame:UnregisterAllEvents()

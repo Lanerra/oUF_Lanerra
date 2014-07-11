@@ -86,6 +86,7 @@ Settings = {
                 Current = false,
                 ClassColor = true,
             },
+            ShowBuffs = false, -- Show buffs on party frames
             HidePower = true, -- Reserved for future use
             Healer = true,
         },

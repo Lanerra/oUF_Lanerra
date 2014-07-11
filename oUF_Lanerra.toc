@@ -1,5 +1,5 @@
 ## Interface: 50400
-## Version: 1.5.3
+## Version: 1.5.4
 
 ## Title: oUF_Lanerra
 ## Notes: oUF layout by Lanerra
