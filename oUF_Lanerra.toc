@@ -1,5 +1,5 @@
 ## Interface: 60000
-## Version: 1.5.5
+## Version: 1.5.6
 
 ## Title: oUF_Lanerra
 ## Notes: oUF layout by Lanerra
