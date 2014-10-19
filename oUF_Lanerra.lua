@@ -291,8 +291,16 @@ local UpdateHealth = function(Health, unit, min, max)
 		end
 	end
 	
-	-- Bar Color Stuff
-	Health:SetStatusBarColor(.25, .25, .25)
+	-- Bar Color Stuff	
+	if (Settings.Show.ClassColorHealth) then
+        Health.colorClass = true
+    else
+        Health:SetStatusBarColor(0.25, 0.25, 0.25)
+    end
+	
+	if UnitIsTapped(unit) then
+		Health:SetStatusBarColor(0.6, 0.6, 0.6)
+	end
 end
 
 -- Group update health function
