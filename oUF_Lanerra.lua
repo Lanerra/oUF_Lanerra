@@ -229,7 +229,7 @@ local UpdateHealth = function(Health, unit, min, max)
     if (Health:GetParent().unit ~= unit) then
         return
 	end
-    
+	
 	if (not unit == 'pet' or unit == 'focus' or unit == 'targettarget' or unit == 'player') then
 		if (UnitIsDead(unit) or UnitIsGhost(unit) or not UnitIsConnected(unit)) then
             Health:SetValue(0)
@@ -290,17 +290,6 @@ local UpdateHealth = function(Health, unit, min, max)
 			Health.Value:SetText()
 		end
 	end
-	
-	-- Bar Color Stuff	
-	if (Settings.Show.ClassColorHealth) then
-        Health.colorClass = true
-    else
-        Health:SetStatusBarColor(0.25, 0.25, 0.25)
-    end
-	
-	if UnitIsTapped(unit) then
-		Health:SetStatusBarColor(0.6, 0.6, 0.6)
-	end
 end
 
 -- Group update health function
@@ -352,7 +341,6 @@ local function UpdateRaidHealth(Health, unit, min, max)
 			Health.Value:SetText()
 		end
 		
-		local color = RAID_CLASS_COLORS[select(2, UnitClass(unit))]
 		if (Settings.Units.Raid.Health.ClassColor) then
 			Health.colorClass = true
 		else
@@ -564,8 +552,16 @@ local Stylish = function(self, unit, isSingle)
 	
     -- Health Bar-specific stylings
 	self.Health = CreateFrame('StatusBar', '$parentHealthBar', self)
-	self.Health:SetHeight(Settings.Units.Player.Height * .75)
+	self.Health:SetHeight(Settings.Units.Player.Height * .87)
 	self.Health:SetStatusBarTexture(Settings.Media.StatusBar)
+	
+	if (Settings.Show.ClassColorHealth and unit ~= 'pet') then
+        self.Health.colorClass = true
+    else
+        self.Health:SetStatusBarColor(0.25, 0.25, 0.25)
+    end
+	
+	self.Health.colorTapping = true
 	
 	-- Turn on the smoothness
 	self.Health.Smooth = true
@@ -599,10 +595,10 @@ local Stylish = function(self, unit, isSingle)
 	
 	-- And now for the power bar and text stuff
 	self.Power = CreateFrame('StatusBar', '$parentPowerBar', self)
-	self.Power:SetHeight(Settings.Units.Player.Height * .22)
+	self.Power:SetHeight(Settings.Units.Player.Height * .11)
 	self.Power:SetStatusBarTexture(Settings.Media.StatusBar)
     
-	self.Power.colorClass = true
+	self.Power.colorClass = (not Settings.Show.ClassColorHealth and true or false)
 	self.Power.colorTapping = true
     self.Power.colorReaction = true
     	

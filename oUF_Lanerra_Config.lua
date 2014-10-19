@@ -7,7 +7,7 @@ Settings = {
         Party = true,
         Raid = true,
         HealerOverride = true,
-        ClassColorHealth = true,
+        ClassColorHealth = false,
     },
     Media = {
         Border = 'Interface\\Addons\\oUF_Lanerra\\media\\borderTexture.tga',
