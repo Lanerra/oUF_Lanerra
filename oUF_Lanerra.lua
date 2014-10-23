@@ -6,6 +6,22 @@
 --]]
 
 local objects = {}
+local PlayerUnits = { player = true, pet = true, vehicle = true }
+local noop = function() return end
+local fontstrings = {}
+local PowerBarColor = PowerBarColor
+
+-- A little backdrop local to save us some typing...because I'm lazy
+local backdrop = {
+	bgFile = [[Interface\BUTTONS\WHITE8X8]],
+	insets = {top = -1, left = -1, bottom = -1, right = -1},
+}
+
+PowerBarColor['MANA'] = { r = 0/255, g = 0.55, b = 1 }
+PowerBarColor['RAGE'] = { r = 240/255, g = 45/255, b = 75/255 }
+PowerBarColor['FOCUS'] = { r = 255/255, g = 175/255, b = 0 }
+PowerBarColor['ENERGY'] = { r = 1, g = 1, b = 35/255 }
+PowerBarColor['RUNIC_POWER'] = { r = 0.45, g = 0.85, b = 1 }
 
 -------------------------------------------------
 -- Kill some unneeded settings
@@ -35,10 +51,6 @@ end
 do 
     for k, v in pairs(UnitPopupMenus) do
         for x, i in pairs(UnitPopupMenus[k]) do
-            if (i == 'SET_FOCUS' or i == 'CLEAR_FOCUS') then
-                table.remove(UnitPopupMenus[k],x)
-            end
-			
 			if (i == 'PET_DISMISS') then
 				table.remove(UnitPopupMenus[k],x)
 			end
@@ -49,13 +61,6 @@ end
 -------------------------------------------------
 -- Variables for defining colors and appearance
 -------------------------------------------------
-
-
-local colors = oUF.colors
-
-local playerClass = select(2, UnitClass('player'))
-local isHealer = (playerClass == 'DRUID' or playerClass == 'PALADIN' or playerClass == 'PRIEST' or playerClass == 'SHAMAN')
-
 local Loader = CreateFrame('Frame')
 Loader:RegisterEvent('ADDON_LOADED')
 Loader:SetScript('OnEvent', function(self, event, addon)
@@ -64,28 +69,6 @@ Loader:SetScript('OnEvent', function(self, event, addon)
 	oUFLanAura = oUFLanAura or {}
 	UpdateAuraList()
 end)
-
--- A little backdrop local to save us some typing...because I'm lazy
-local backdrop = {
-	bgFile = [[Interface\BUTTONS\WHITE8X8]],
-	insets = {top = -1, left = -1, bottom = -1, right = -1},
-}
-
-local PlayerUnits = { player = true, pet = true, vehicle = true }
-
--- Dummy function
-local noop = function() return end
-
-local fontstrings = {}
-
--- Custom power colors
-local PowerBarColor = PowerBarColor
-
-PowerBarColor['MANA'] = { r = 0/255, g = 0.55, b = 1 }
-PowerBarColor['RAGE'] = { r = 240/255, g = 45/255, b = 75/255 }
-PowerBarColor['FOCUS'] = { r = 255/255, g = 175/255, b = 0 }
-PowerBarColor['ENERGY'] = { r = 1, g = 1, b = 35/255 }
-PowerBarColor['RUNIC_POWER'] = { r = 0.45, g = 0.85, b = 1 }
 
 -- Threat color handling
 colors.threat = {}
@@ -113,7 +96,7 @@ local function UpdateBorder(self)
 		color = colors.debuff[debuff]
 	elseif threat and threat > 1 then
 		color = colors.threat[threat]
-	elseif debuff and not ns.config.dispelFilter then
+	elseif debuff then
 		color = colors.debuff[debuff]
 	elseif threat and threat > 0 then
 		color = colors.threat[threat]
@@ -144,7 +127,6 @@ end
 ------------------------------------------
 -- Functions used to build Unit Frames
 ------------------------------------------
-
 
 -- Build dropdown menus
 local dropdown = CreateFrame('Frame', 'oUF_LanerraDropDown', UIParent, 'UIDropDownMenuTemplate')
@@ -225,7 +207,7 @@ local function PostChannelStart(Castbar, unit)
 end
 
 -- Health update function of doom!
-local UpdateHealth = function(Health, unit, min, max)
+local function UpdateHealth(Health, unit, min, max)
     if (Health:GetParent().unit ~= unit) then
         return
 	end
@@ -313,7 +295,6 @@ local function UpdateGroupHealth(Health, unit, min, max)
         Health.Value:SetText()
     end
     
-    local color = RAID_CLASS_COLORS[select(2, UnitClass(unit))]
     if (Settings.Units.Party.Health.ClassColor) then
         Health.colorClass = true
     else
@@ -544,11 +525,20 @@ local Stylish = function(self, unit, isSingle)
     
 	self.ignoreHealComm = true
 	
---    print('Spawn', self:GetName(), unit)
 	tinsert(objects, self)
 
 	self:EnableMouse(true)
 	self:RegisterForClicks('AnyUp')
+	
+	if Settings.Show.HealerOverride then
+		if GetCVarBool("predictedHealth") ~= true then
+			SetCVar("predictedHealth", "1")
+		end
+	else
+		if GetCVarBool("predictedHealth") == true then
+			SetCVar("predictedHealth", "0")
+		end
+	end
 	
     -- Health Bar-specific stylings
 	self.Health = CreateFrame('StatusBar', '$parentHealthBar', self)
@@ -565,7 +555,6 @@ local Stylish = function(self, unit, isSingle)
 	
 	-- Turn on the smoothness
 	self.Health.Smooth = true
-	
 	self.Health.frequentUpdates = 0.2
 	
 	self.Health:SetParent(self)
@@ -598,7 +587,13 @@ local Stylish = function(self, unit, isSingle)
 	self.Power:SetHeight(Settings.Units.Player.Height * .11)
 	self.Power:SetStatusBarTexture(Settings.Media.StatusBar)
     
-	self.Power.colorClass = (not Settings.Show.ClassColorHealth and true or false)
+	if Settings.Show.ClassColorHealth then
+		self.Power.colorClass = false
+		self.Power.colorPower = true
+	else
+		self.Power.colorClass = true
+		self.Power.colorPower = false
+	end
 	self.Power.colorTapping = true
     self.Power.colorReaction = true
     	
@@ -774,7 +769,7 @@ local Stylish = function(self, unit, isSingle)
 		
 		_G[bar..'Text']:SetFont(CastingBarFrameText:GetFont(), 13)
 		_G[bar..'Text']:ClearAllPoints()
-		_G[bar..'Text']:SetPoint('CENTER', MirrorTimer1StatusBar, 0, 1)
+		_G[bar..'Text']:SetPoint('CENTER', MirrorTimer1StatusBar)
 		
 		_G[bar..'StatusBar']:SetAllPoints(_G[bar])
 	end
@@ -985,107 +980,109 @@ local Stylish = function(self, unit, isSingle)
 		self.Runes = Runes
     end
 
-    -- DruidPower Support
-    if (unit == 'player' and playerClass == 'DRUID') then    
-        self.Druid = CreateFrame('Frame')
-        self.Druid:SetParent(self) 
-        self.Druid:SetFrameStrata('LOW')
+	if unit == 'player' then
+		-- DruidPower Support
+		if (unit == 'player' and playerClass == 'DRUID') then    
+			self.Druid = CreateFrame('Frame')
+			self.Druid:SetParent(self) 
+			self.Druid:SetFrameStrata('LOW')
 
-        self.Druid.Power = CreateFrame('StatusBar', nil, self)
-        self.Druid.Power:SetPoint('TOP', self.Power, 'BOTTOM', 0, -7)
-        self.Druid.Power:SetStatusBarTexture(Settings.Media.StatusBar)
-        self.Druid.Power:SetFrameStrata('LOW')
-        self.Druid.Power:SetFrameLevel(self.Druid:GetFrameLevel() - 1)
-        self.Druid.Power:SetHeight(self.Power:GetHeight())
-        self.Druid.Power:SetWidth(self.Power:GetWidth())
-        self.Druid.Power:SetBackdrop(backdrop)
-        self.Druid.Power:SetBackdropColor(0, 0, 0, 0.5)
-        
-        self.DruidBorder = CreateFrame('Frame', nil, self.Druid.Power)
-        self.DruidBorder:SetAllPoints(self.Druid.Power)
-        self.DruidBorder:SetFrameLevel(self.Druid.Power:GetFrameLevel() + 2)
-        
-        AddBorder(self.DruidBorder, Settings.Media.BorderSize, 5)
-        
-        table.insert(self.__elements, UpdateDruidPower)
-        self:RegisterEvent('UNIT_MANA', UpdateDruidPower)
-        self:RegisterEvent('UNIT_RAGE', UpdateDruidPower)
-        self:RegisterEvent('UNIT_ENERGY', UpdateDruidPower)
-        self:RegisterEvent('UPDATE_SHAPESHIFT_FORM', UpdateDruidPower)
-    end
-    
-    -- Eclipse Bar Support
-    if (playerClass == 'DRUID') then
-        local EclipseBar = CreateFrame('Frame', nil, self)
-        EclipseBar:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -10)
-        EclipseBar:SetPoint('TOPRIGHT', self, 'BOTTOMRIGHT', 0, -10)
-        EclipseBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
-        EclipseBar:SetBackdrop(backdrop)
-        EclipseBar:SetBackdropColor(0, 0, 0, 0.5)
-        
-        local EclipseBarBorder = CreateFrame('Frame', nil, EclipseBar)
-        EclipseBarBorder:SetAllPoints(EclipseBar)
-        EclipseBarBorder:SetFrameLevel(EclipseBar:GetFrameLevel() + 2)
-      
-        AddBorder(EclipseBarBorder, Settings.Media.BorderSize, Settings.Media.BorderPadding)
+			self.Druid.Power = CreateFrame('StatusBar', nil, self)
+			self.Druid.Power:SetPoint('TOP', self.Power, 'BOTTOM', 0, -7)
+			self.Druid.Power:SetStatusBarTexture(Settings.Media.StatusBar)
+			self.Druid.Power:SetFrameStrata('LOW')
+			self.Druid.Power:SetFrameLevel(self.Druid:GetFrameLevel() - 1)
+			self.Druid.Power:SetHeight(self.Power:GetHeight())
+			self.Druid.Power:SetWidth(self.Power:GetWidth())
+			self.Druid.Power:SetBackdrop(backdrop)
+			self.Druid.Power:SetBackdropColor(0, 0, 0, 0.5)
+			
+			self.DruidBorder = CreateFrame('Frame', nil, self.Druid.Power)
+			self.DruidBorder:SetAllPoints(self.Druid.Power)
+			self.DruidBorder:SetFrameLevel(self.Druid.Power:GetFrameLevel() + 2)
+			
+			AddBorder(self.DruidBorder, Settings.Media.BorderSize, 5)
+			
+			table.insert(self.__elements, UpdateDruidPower)
+			self:RegisterEvent('UNIT_MANA', UpdateDruidPower)
+			self:RegisterEvent('UNIT_RAGE', UpdateDruidPower)
+			self:RegisterEvent('UNIT_ENERGY', UpdateDruidPower)
+			self:RegisterEvent('UPDATE_SHAPESHIFT_FORM', UpdateDruidPower)
+		end
+		
+		-- Eclipse Bar Support
+		if (playerClass == 'DRUID') then
+			local EclipseBar = CreateFrame('Frame', nil, self)
+			EclipseBar:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -10)
+			EclipseBar:SetPoint('TOPRIGHT', self, 'BOTTOMRIGHT', 0, -10)
+			EclipseBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
+			EclipseBar:SetBackdrop(backdrop)
+			EclipseBar:SetBackdropColor(0, 0, 0, 0.5)
+			
+			local EclipseBarBorder = CreateFrame('Frame', nil, EclipseBar)
+			EclipseBarBorder:SetAllPoints(EclipseBar)
+			EclipseBarBorder:SetFrameLevel(EclipseBar:GetFrameLevel() + 2)
+		  
+			AddBorder(EclipseBarBorder, Settings.Media.BorderSize, Settings.Media.BorderPadding)
 
-        local LunarBar = CreateFrame('StatusBar', nil, EclipseBar)
-        LunarBar:SetPoint('LEFT', EclipseBar, 'LEFT', 0, 0)
-        LunarBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
-        LunarBar:SetStatusBarTexture(Settings.Media.StatusBar)
-        LunarBar:SetStatusBarColor(1, 1, 1)
-        EclipseBar.LunarBar = LunarBar
+			local LunarBar = CreateFrame('StatusBar', nil, EclipseBar)
+			LunarBar:SetPoint('LEFT', EclipseBar, 'LEFT', 0, 0)
+			LunarBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
+			LunarBar:SetStatusBarTexture(Settings.Media.StatusBar)
+			LunarBar:SetStatusBarColor(1, 1, 1)
+			EclipseBar.LunarBar = LunarBar
 
-        local SolarBar = CreateFrame('StatusBar', nil, EclipseBar)
-        SolarBar:SetPoint('LEFT', LunarBar:GetStatusBarTexture(), 'RIGHT', 0, 0)
-        SolarBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
-        SolarBar:SetStatusBarTexture(Settings.Media.StatusBar)
-        SolarBar:SetStatusBarColor(1, 3/5, 0)
-        EclipseBar.SolarBar = SolarBar
+			local SolarBar = CreateFrame('StatusBar', nil, EclipseBar)
+			SolarBar:SetPoint('LEFT', LunarBar:GetStatusBarTexture(), 'RIGHT', 0, 0)
+			SolarBar:SetSize(self.Power:GetWidth(), self.Power:GetHeight())
+			SolarBar:SetStatusBarTexture(Settings.Media.StatusBar)
+			SolarBar:SetStatusBarColor(1, 3/5, 0)
+			EclipseBar.SolarBar = SolarBar
 
-        local EclipseBarText = EclipseBarBorder:CreateFontString(nil, 'OVERLAY')
-        EclipseBarText:SetPoint('CENTER', EclipseBarBorder, 'CENTER', 0, 0)
-        EclipseBarText:SetFont(Settings.Media.Font, Settings.Media.FontSize, 'OUTLINE')
-        self:Tag(EclipseBarText, '[pereclipse]%')
+			local EclipseBarText = EclipseBarBorder:CreateFontString(nil, 'OVERLAY')
+			EclipseBarText:SetPoint('CENTER', EclipseBarBorder, 'CENTER', 0, 0)
+			EclipseBarText:SetFont(Settings.Media.Font, Settings.Media.FontSize, 'OUTLINE')
+			self:Tag(EclipseBarText, '[pereclipse]%')
 
-        self.EclipseBar = EclipseBar
-    end
-    
-    -- Soul Shard Support
-	if (playerClass == 'WARLOCK') then
-        local Shards = self:CreateFontString(nil, 'OVERLAY')
-        Shards:SetPoint('CENTER', self, 'RIGHT', 17, -2)
-        Shards:SetFont(Settings.Media.Font, 24, 'OUTLINE')
-        Shards:SetJustifyH('CENTER')
-        self:Tag(Shards, '[LanShards]')
-    end
+			self.EclipseBar = EclipseBar
+		end
+		
+		-- Soul Shard Support
+		if (playerClass == 'WARLOCK') then
+			local Shards = self:CreateFontString(nil, 'OVERLAY')
+			Shards:SetPoint('CENTER', self, 'RIGHT', 17, -2)
+			Shards:SetFont(Settings.Media.Font, 24, 'OUTLINE')
+			Shards:SetJustifyH('CENTER')
+			self:Tag(Shards, '[LanShards]')
+		end
 
-    -- Holy Power Support
-    if (playerClass == 'PALADIN') then
-        local HolyPower = self:CreateFontString(nil, 'OVERLAY')
-        HolyPower:SetPoint('CENTER', self, 'RIGHT', 17, -2)
-        HolyPower:SetFont(Settings.Media.Font, 24, 'OUTLINE')
-        HolyPower:SetJustifyH('CENTER')
-        self:Tag(HolyPower, '[LanHolyPower]')
-    end
-    
-    -- Combo points display
-	if (playerClass == 'ROGUE') or (select(2, UnitClass('player')) == 'DRUID') then
-        local ComboPoints = self:CreateFontString(nil, 'OVERLAY')
-        ComboPoints:SetPoint('CENTER', self, 'RIGHT', 17, -2)
-        ComboPoints:SetFont(Settings.Media.Font, 24, 'OUTLINE')
-        ComboPoints:SetJustifyH('CENTER')
-        self:Tag(ComboPoints, '[LanCombo]')
-    end
-    
-    -- Chi display
-    if (playerClass == 'MONK') then
-        local Chi = self:CreateFontString(nil, 'OVERLAY')
-        Chi:SetPoint('CENTER', self, 'RIGHT', 17, 0)
-        Chi:SetFont(Settings.Media.Font, 24, 'OUTLINE')
-        Chi:SetJustifyH('CENTER')
-        self:Tag(Chi, '[LanChi]')
-    end
+		-- Holy Power Support
+		if (playerClass == 'PALADIN') then
+			local HolyPower = self:CreateFontString(nil, 'OVERLAY')
+			HolyPower:SetPoint('CENTER', self, 'RIGHT', 17, -2)
+			HolyPower:SetFont(Settings.Media.Font, 24, 'OUTLINE')
+			HolyPower:SetJustifyH('CENTER')
+			self:Tag(HolyPower, '[LanHolyPower]')
+		end
+		
+		-- Combo points display
+		if (playerClass == 'ROGUE') or (playerClass == 'DRUID') then
+			local ComboPoints = self:CreateFontString(nil, 'OVERLAY')
+			ComboPoints:SetPoint('CENTER', self, 'RIGHT', 17, -2)
+			ComboPoints:SetFont(Settings.Media.Font, 24, 'OUTLINE')
+			ComboPoints:SetJustifyH('CENTER')
+			self:Tag(ComboPoints, '[LanCombo]')
+		end
+		
+		-- Chi display
+		if (playerClass == 'MONK') then
+			local Chi = self:CreateFontString(nil, 'OVERLAY')
+			Chi:SetPoint('CENTER', self, 'RIGHT', 17, 0)
+			Chi:SetFont(Settings.Media.Font, 24, 'OUTLINE')
+			Chi:SetJustifyH('CENTER')
+			self:Tag(Chi, '[LanChi]')
+		end
+	end
 	
     -- Raid Icons
     if (unit == 'target') then
@@ -1120,14 +1117,14 @@ local Stylish = function(self, unit, isSingle)
     end
 	
     -- Hardcore border action!
-	if unit == 'player' and select(2, UnitClass('player')) == 'DEATHKNIGHT' then
+	if unit == 'player' and playerClass == 'DEATHKNIGHT' then
 		self.Overlay:SetPoint('TOPLEFT', self.Runes[1], 0, -1)
 		self.Overlay:SetPoint('BOTTOMRIGHT', self)
 	else
 		self.Overlay:SetAllPoints(self)
 	end
-	self.Overlay:SetFrameLevel(self.Health:GetFrameLevel() + (self.Power and 3 or 2))
-    AddBorder(self.Overlay, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
+	
+	AddBorder(self.Overlay, Settings.Media.BorderSize, Settings.Media.BorderPadding + 2)
     
     self.UpdateBorder = UpdateBorder
 
@@ -1238,7 +1235,7 @@ local function StylishGroup(self, unit)
 		self.HealPrediction = {
 			myBar = MHPB,
 			otherBar = OHPB,
-			maxOverflow = 1,
+			maxOverflow = 1.05,
 		}
     end
 	
