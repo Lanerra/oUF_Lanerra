@@ -85,13 +85,13 @@ local function UpdateBorder(self)
 
 	local color
 	if debuff and dispellable then
-		color = colors.debuff[debuff]
+		color = oUF.colors.debuff[debuff]
 	elseif threat and threat > 1 then
-		color = colors.threat[threat]
+		color = oUF.colors.threat[threat]
 	elseif debuff then
-		color = colors.debuff[debuff]
+		color = oUF.colors.debuff[debuff]
 	elseif threat and threat > 0 then
-		color = colors.threat[threat]
+		color = oUF.colors.threat[threat]
 	end
 
 	if color then
@@ -99,6 +99,14 @@ local function UpdateBorder(self)
 	else
 		SetBorderColor(self.Overlay, unpack(Settings.Media.BorderColor))
 	end
+end
+
+-- Color conversion function
+function hex(r, g, b)
+	if(type(r) == 'table') then
+		if(r.r) then r, g, b = r.r, r.g, r.b else r, g, b = unpack(r) end
+	end
+	return ('|cff%02x%02x%02x'):format(r * 255, g * 255, b * 255)
 end
 
 -- Formatting function for the display of health and power text
@@ -207,7 +215,7 @@ local function UpdateHealth(Health, unit, min, max)
 	if (not unit == 'pet' or unit == 'focus' or unit == 'targettarget' or unit == 'player') then
 		if (UnitIsDead(unit) or UnitIsGhost(unit) or not UnitIsConnected(unit)) then
             Health:SetValue(0)
-            Health:SetStatusBarColor(.5, .5, .5)
+            --Health:SetStatusBarColor(.5, .5, .5)
         end
 	end
 	
@@ -1660,7 +1668,7 @@ function oUF:DisableBlizzard(unit)
 		HandleFrame(TargetofFocusFrame)
 	elseif(unit == 'targettarget') then
 		HandleFrame(TargetFrameToT)
-	elseif(unit:match'(boss)%d?$' == 'boss') then
+	--[[elseif(unit:match'(boss)%d?$' == 'boss') then
 		local id = unit:match'boss(%d)'
 		if(id) then
 			HandleFrame('Boss' .. id .. 'TargetFrame')
@@ -1668,7 +1676,7 @@ function oUF:DisableBlizzard(unit)
 			for i=1, 4 do
 				HandleFrame(('Boss%dTargetFrame'):format(i))
 			end
-		end
+		end]]
 	elseif(unit:match'(party)%d?$' == 'party') then
 		local id = unit:match'party(%d)'
 		if(id) then
