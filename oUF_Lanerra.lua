@@ -10,6 +10,7 @@ local PlayerUnits = { player = true, pet = true, vehicle = true }
 local noop = function() return end
 local fontstrings = {}
 local PowerBarColor = PowerBarColor
+local playerClass = UnitClass('player')
 
 -- A little backdrop local to save us some typing...because I'm lazy
 local backdrop = {
@@ -384,7 +385,7 @@ local function UpdateDruidPower(self, event, unit)
 end
 
 -- Runes, sucka!
-if playerClass == 'DEATHKNIGHT' then
+if playerClass == 'Deathknight' then
 	-- Better unholy color:
 	oUF.colors.runes[2][1] = 0.3
 	oUF.colors.runes[2][2] = 0.9
@@ -958,7 +959,7 @@ local Stylish = function(self, unit, isSingle)
 	end
 	
 	-- Various oUF plugins support
-	if (unit == 'player') and playerClass == 'DEATHKNIGHT' then
+	if (unit == 'player') and playerClass == 'Deathknight' then
 		local Runes = {}
 		for index = 1, 6 do
 			-- Position and size of the rune bar indicators
@@ -982,7 +983,7 @@ local Stylish = function(self, unit, isSingle)
 
 	if unit == 'player' then
 		-- DruidPower Support
-		if (unit == 'player' and playerClass == 'DRUID') then    
+		if (unit == 'player' and playerClass == 'Druid') then    
 			self.Druid = CreateFrame('Frame')
 			self.Druid:SetParent(self) 
 			self.Druid:SetFrameStrata('LOW')
@@ -1011,7 +1012,7 @@ local Stylish = function(self, unit, isSingle)
 		end
 		
 		-- Eclipse Bar Support
-		if (playerClass == 'DRUID') then
+		if (playerClass == 'Druid') then
 			local EclipseBar = CreateFrame('Frame', nil, self)
 			EclipseBar:SetPoint('TOPLEFT', self, 'BOTTOMLEFT', 0, -10)
 			EclipseBar:SetPoint('TOPRIGHT', self, 'BOTTOMRIGHT', 0, -10)
@@ -1048,7 +1049,7 @@ local Stylish = function(self, unit, isSingle)
 		end
 		
 		-- Soul Shard Support
-		if (playerClass == 'WARLOCK') then
+		if (playerClass == 'Warlock') then
 			local Shards = self:CreateFontString(nil, 'OVERLAY')
 			Shards:SetPoint('CENTER', self, 'RIGHT', 17, -2)
 			Shards:SetFont(Settings.Media.Font, 24, 'OUTLINE')
@@ -1057,7 +1058,7 @@ local Stylish = function(self, unit, isSingle)
 		end
 
 		-- Holy Power Support
-		if (playerClass == 'PALADIN') then
+		if (playerClass == 'Paladin') then
 			local HolyPower = self:CreateFontString(nil, 'OVERLAY')
 			HolyPower:SetPoint('CENTER', self, 'RIGHT', 17, -2)
 			HolyPower:SetFont(Settings.Media.Font, 24, 'OUTLINE')
@@ -1066,7 +1067,7 @@ local Stylish = function(self, unit, isSingle)
 		end
 		
 		-- Combo points display
-		if (playerClass == 'ROGUE') or (playerClass == 'DRUID') then
+		if (playerClass == 'Rogue') or (playerClass == 'Druid') then
 			local ComboPoints = self:CreateFontString(nil, 'OVERLAY')
 			ComboPoints:SetPoint('CENTER', self, 'RIGHT', 17, -2)
 			ComboPoints:SetFont(Settings.Media.Font, 24, 'OUTLINE')
@@ -1075,7 +1076,7 @@ local Stylish = function(self, unit, isSingle)
 		end
 		
 		-- Chi display
-		if (playerClass == 'MONK') then
+		if (playerClass == 'Monk') then
 			local Chi = self:CreateFontString(nil, 'OVERLAY')
 			Chi:SetPoint('CENTER', self, 'RIGHT', 17, 0)
 			Chi:SetFont(Settings.Media.Font, 24, 'OUTLINE')
@@ -1117,7 +1118,7 @@ local Stylish = function(self, unit, isSingle)
     end
 	
     -- Hardcore border action!
-	if unit == 'player' and playerClass == 'DEATHKNIGHT' then
+	if unit == 'player' and playerClass == 'Deathknight' then
 		self.Overlay:SetPoint('TOPLEFT', self.Runes[1], 0, -1)
 		self.Overlay:SetPoint('BOTTOMRIGHT', self)
 	else
@@ -1711,14 +1712,14 @@ function GetPlayerRole()
 	return CURRENT_ROLE
 end
 
-if playerClass == 'DEATHKNIGHT' then
+if playerClass == 'Deathknight' then
 	updateEvents = 'UPDATE_SHAPESHIFT_FORM'
 	function getRole()
 		if GetSpecialization() == 1 then -- Blood 1, Frost 2, Unholy 3
 			return 'TANK'
 		end
 	end
-elseif playerClass == 'DRUID' then
+elseif playerClass == 'Druid' then
 	updateEvents = 'UPDATE_SHAPESHIFT_FORM'
 	function getRole()
 		local form = GetShapeshiftFormID() -- Aquatic 4, Bear 5, Cat 1, Flight 29, Moonkin 31, Swift Flight 27, Travel 3, Tree 2
@@ -1728,7 +1729,7 @@ elseif playerClass == 'DRUID' then
 			return 'HEALER'
 		end
 	end
-elseif playerClass == 'MONK' then
+elseif playerClass == 'Monk' then
 	updateEvents = 'UPDATE_SHAPESHIFT_FORM'
 	function getRole()
 		local form = GetShapeshiftFormID() -- Tiger 24, Ox 23, Serpent 20
@@ -1738,7 +1739,7 @@ elseif playerClass == 'MONK' then
 			return 'HEALER'
 		end
 	end
-elseif playerClass == 'PALADIN' then
+elseif playerClass == 'Paladin' then
 	local RIGHTEOUS_FURY = GetSpellInfo(25780)
 	updateEvents = 'PLAYER_REGEN_DISABLED'
 	function getRole()
@@ -1748,19 +1749,19 @@ elseif playerClass == 'PALADIN' then
 			return 'HEALER'
 		end
 	end
-elseif playerClass == 'PRIEST' then
+elseif playerClass == 'Priest' then
 	function getRole()
 		if GetSpecialization() ~= 3 then -- Discipline 1, Holy 2, Shadow 3
 			return 'HEALER'
 		end
 	end
-elseif playerClass == 'SHAMAN' then
+elseif playerClass == 'Shaman' then
 	function getRole()
 		if GetSpecialization() == 3 then -- Elemental 1, Enhancement 2, Restoration 3
 			return 'HEALER'
 		end
 	end
-elseif playerClass == 'WARRIOR' then
+elseif playerClass == 'Warrior' then
 	updateEvents = 'UPDATE_SHAPESHIFT_FORM'
 	function getRole()
 		if GetSpecialization() == 3 and GetShapeshiftFormID() == 18 then -- Battle 17, Berserker 19, Defensive 18
